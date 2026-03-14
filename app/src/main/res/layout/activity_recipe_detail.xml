@@ -71,7 +71,31 @@
                 android:text="@string/toggle_card_view" />
 
         </com.google.android.material.button.MaterialButtonToggleGroup>
+        <com.google.android.material.button.MaterialButtonToggleGroup
+            android:id="@+id/handToggle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:singleSelection="true"
+            app:selectionRequired="true"
+            android:layout_marginBottom="16dp">
 
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/toggleOneHande"
+                style="?attr/materialButtonOutlinedStyle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/toggle_one_hand_mode" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/toggleTwoHande"
+                style="?attr/materialButtonOutlinedStyle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/toggle_two_hand_mode" />
+
+        </com.google.android.material.button.MaterialButtonToggleGroup>
         <Button
             android:id="@+id/startCookingButton"
             android:layout_width="match_parent"

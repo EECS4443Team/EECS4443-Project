@@ -43,6 +43,10 @@
 
     <!-- item_recipe -->
     <string name="recipe_name_placeholder">Recipe Name</string>
+    <string name="topButton">TopButton</string>
+    <string name="bottombutton">BottomButton</string>
+    <string name="toggle_one_hand_mode">One-Hand</string>
+    <string name="toggle_two_hand_mode">two-Hand</string>
 
     <string-array name="recipe_categories">
         <item>All</item>

@@ -24,7 +24,8 @@
         <activity android:name=".AIResultsActivity" />
         <activity android:name=".SearchResultsActivity" />
         <activity android:name=".RecipeDetailActivity" />
-        <activity android:name=".RecipeStepScrollActivity" />
+        <activity android:name=".RecipeStepScrollActivity"
+            android:exported="true"/>
         <activity android:name=".RecipeStepSwipeActivity" />
 
     </application>

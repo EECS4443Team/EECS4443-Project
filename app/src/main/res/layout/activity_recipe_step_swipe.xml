@@ -40,29 +40,15 @@
 
     </com.google.android.material.card.MaterialCardView>
 
+    <SeekBar
+        android:id="@+id/seekBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
     <LinearLayout
         style="?android:attr/buttonBarStyle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal">
-
-        <Button
-            android:id="@+id/prevButton"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/button_previous"
-            android:enabled="false"
-            android:layout_marginEnd="8dp" />
-
-        <Button
-            android:id="@+id/nextButton"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/button_next"
-            android:layout_marginStart="8dp" />
-
-    </LinearLayout>
+        android:orientation="horizontal"/>
 
 </LinearLayout>
