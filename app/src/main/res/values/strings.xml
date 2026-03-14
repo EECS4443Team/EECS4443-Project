@@ -1,3 +1,59 @@
 <resources>
     <string name="app_name">EECS4443Project</string>
+
+    <!-- MainActivity -->
+    <string name="title_recipe_app">Recipe App</string>
+    <string name="toggle_generate_ai">Generate With AI</string>
+    <string name="toggle_search_manually">Search Manually</string>
+    <string name="hint_search_recipes">Search recipes…</string>
+    <string name="label_filters">Filters</string>
+    <string name="filter_spicy">Spicy</string>
+    <string name="filter_vegetarian">Vegetarian</string>
+    <string name="button_search">Search</string>
+
+    <!-- AIResultsActivity -->
+    <string name="title_ai_results">AI-Generated Results</string>
+    <string name="ai_output_placeholder">AI-generated recipe will appear here…</string>
+    <string name="button_view_recipe">View Recipe</string>
+
+    <!-- SearchResultsActivity -->
+    <string name="title_search_results">Search Results</string>
+
+    <!-- RecipeDetailActivity -->
+    <string name="label_recipe_title">Recipe Title</string>
+    <string name="label_ingredients">Ingredients</string>
+    <string name="ingredients_placeholder">Ingredients text.</string>
+    <string name="content_desc_recipe_image">Recipe image</string>
+    <string name="toggle_scroll_view">Scroll View</string>
+    <string name="toggle_card_view">Card View</string>
+    <string name="button_start_cooking">Start Cooking</string>
+
+    <!-- RecipeStepScrollActivity -->
+    <string name="title_recipe_steps">Recipe Steps</string>
+    <string name="title_recipe_steps_scroll">Recipe Steps (Scroll)</string>
+    <string name="step_placeholder">Step instructions will appear here.</string>
+    <string name="step_1">Step 1</string>
+    <string name="step_2">Step 2</string>
+    <string name="step_3">Step 3</string>
+    <string name="step_format">Step %d</string>
+
+    <!-- RecipeStepSwipeActivity -->
+    <string name="button_previous">Previous</string>
+    <string name="button_next">Next</string>
+
+    <!-- item_recipe -->
+    <string name="recipe_name_placeholder">Recipe Name</string>
+    <string name="topButton">TopButton</string>
+    <string name="bottombutton">BottomButton</string>
+    <string name="toggle_one_hand_mode">One-Hand</string>
+    <string name="toggle_two_hand_mode">two-Hand</string>
+
+    <string-array name="recipe_categories">
+        <item>All</item>
+        <item>Breakfast</item>
+        <item>Lunch</item>
+        <item>Dinner</item>
+        <item>Dessert</item>
+        <item>Snack</item>
+    </string-array>
 </resources>
