@@ -4,9 +4,7 @@ plugins {
 
 android {
     namespace = "com.example.eecs4443project"
-    compileSdk {
-        version = release(36)
-    }
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.example.eecs4443project"
@@ -38,7 +36,9 @@ dependencies {
     implementation(libs.material)
     implementation(libs.activity)
     implementation(libs.constraintlayout)
+    implementation(files("libs/jsoup-1.22.1.jar"))
     testImplementation(libs.junit)
+    testImplementation("org.json:json:20251224")
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
 }
