@@ -49,6 +49,7 @@ public class RecipeDatabaseHelper extends SQLiteOpenHelper {
                 COL_DESCRIPTION + " TEXT, " +
                 COL_PREP_TIME + " TEXT, " +
                 COL_COOK_TIME + " TEXT, " +
+
                 COL_YIELD + " TEXT" + ")";
 
         // Create Ingredients Table
