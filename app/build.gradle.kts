@@ -36,7 +36,7 @@ dependencies {
     implementation(libs.material)
     implementation(libs.activity)
     implementation(libs.constraintlayout)
-    implementation(files("libs/jsoup-1.22.1.jar"))
+    implementation("org.jsoup:jsoup:1.16.1")
     testImplementation(libs.junit)
     testImplementation("org.json:json:20251224")
     androidTestImplementation(libs.ext.junit)
