@@ -1,14 +1,18 @@
 plugins {
     alias(libs.plugins.android.application)
+    alias(libs.plugins.secrets.gradle.plugin)
 }
 
 android {
     namespace = "com.example.eecs4443project"
     compileSdk = 36
 
+    buildFeatures {
+        buildConfig = true
+    }
     defaultConfig {
         applicationId = "com.example.eecs4443project"
-        minSdk = 36
+        minSdk = 26
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
@@ -31,14 +35,23 @@ android {
     }
 }
 
+secrets {
+    // Specify the file name containing your secrets.
+    propertiesFileName = "secrets.properties"
+}
+
 dependencies {
     implementation(libs.appcompat)
     implementation(libs.material)
     implementation(libs.activity)
     implementation(libs.constraintlayout)
-    implementation("org.jsoup:jsoup:1.16.1")
     testImplementation(libs.junit)
     testImplementation("org.json:json:20251224")
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
+
+    implementation("com.google.ai.client.generativeai:generativeai:0.9.0")
+    implementation("org.jsoup:jsoup:1.15.4")
+    // Update Guava to match
+    implementation("com.google.guava:guava:33.0.0-android")
 }

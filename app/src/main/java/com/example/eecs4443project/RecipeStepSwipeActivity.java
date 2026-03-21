@@ -1,5 +1,6 @@
 package com.example.eecs4443project;
 
+import android.annotation.SuppressLint;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.TextView;
@@ -18,6 +19,7 @@ public class RecipeStepSwipeActivity extends AppCompatActivity {
     private Button prevButton;
     private Button nextButton;
 
+    @SuppressLint("MissingInflatedId")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
