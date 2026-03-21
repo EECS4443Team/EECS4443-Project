@@ -22,7 +22,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
-    private final String[] INGREDIENTS = {"Chicken", "Rice", "Tomato", "Pasta"};
+    private final String[] INGREDIENTS = {"Chicken", "Beef", "Pork", "Shrimp", "Salmon", "Potato", "Spinach", "Mushroom","Tomato", "Onion", "Pasta", "Rice", "Cheese", "Bacon", "Garlic"};
+
     private List<CheckBox> checkBoxList = new ArrayList<>();
 
     @Override
