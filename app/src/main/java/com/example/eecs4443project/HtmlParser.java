@@ -32,7 +32,13 @@ public class HtmlParser {
         this.url = url;
         parseDynamicRecipe();
     }
+    /**
+     * TODO search recipe based on ingredients
+     * @param ingredients ; ingredients to search
+     */
+    public void searchRecipe (JSONArray ingredients) {
 
+    }
     public void parseDynamicRecipe() {
         try {
             Document doc = Jsoup.connect(url)
@@ -97,11 +103,14 @@ public class HtmlParser {
             this.ingredients = recipe.getJSONArray("recipeIngredient");
 //            Log.d(TAG, "Ingredient : " + this.ingredients);
             System.out.println(this.ingredients);
+            for (int i = 0; i < this.ingredients.length(); i++) {
+                System.out.println("-" + this.ingredients.getString(i));
+            }
         }
 
         // Instructions
         if (recipe.has("recipeInstructions")) {
-            System.out.println("\n[Instructions]");
+//            System.out.println("\n[Instructions]");
             Object instructions = recipe.get("recipeInstructions");
             extractSteps(instructions);
         }
