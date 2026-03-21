@@ -50,7 +50,7 @@ dependencies {
     androidTestImplementation(libs.espresso.core)
 
     implementation("com.google.ai.client.generativeai:generativeai:0.9.0")
-
+    implementation("org.jsoup:jsoup:1.15.4")
     // Update Guava to match
     implementation("com.google.guava:guava:33.0.0-android")
 }
