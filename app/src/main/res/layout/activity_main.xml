@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -25,8 +26,7 @@
             android:layout_height="wrap_content"
             app:singleSelection="true"
             app:selectionRequired="true"
-            android:layout_marginBottom="24dp"
-            xmlns:app="http://schemas.android.com/apk/res-auto">
+            android:layout_marginBottom="24dp">
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/toggleAI"
@@ -57,9 +57,42 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:text="Common Ingredients"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp" />
+
+        <CheckBox
+            android:id="@+id/checkChicken"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Chicken" />
+
+        <CheckBox
+            android:id="@+id/checkRice"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Rice" />
+
+        <CheckBox
+            android:id="@+id/checkTomato"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Tomato" />
+
+        <CheckBox
+            android:id="@+id/checkPasta"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Pasta" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:text="@string/label_filters"
             android:textSize="16sp"
             android:textStyle="bold"
+            android:layout_marginTop="16dp"
             android:layout_marginBottom="8dp" />
 
         <CheckBox

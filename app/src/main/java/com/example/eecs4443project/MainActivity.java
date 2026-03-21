@@ -14,6 +14,9 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.google.android.material.button.MaterialButtonToggleGroup;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class MainActivity extends AppCompatActivity {
 
     @Override
@@ -31,12 +34,30 @@ public class MainActivity extends AppCompatActivity {
         EditText searchInput = findViewById(R.id.searchInput);
         CheckBox spicyCheck = findViewById(R.id.spicyCheck);
         CheckBox vegetarianCheck = findViewById(R.id.vegetarianCheck);
+        
+        CheckBox checkChicken = findViewById(R.id.checkChicken);
+        CheckBox checkRice = findViewById(R.id.checkRice);
+        CheckBox checkTomato = findViewById(R.id.checkTomato);
+        CheckBox checkPasta = findViewById(R.id.checkPasta);
+        
         Button searchButton = findViewById(R.id.searchButton);
 
         acquisitionToggle.check(R.id.toggleManual);
 
         searchButton.setOnClickListener(v -> {
-            String query = searchInput.getText().toString().trim();
+            StringBuilder queryBuilder = new StringBuilder(searchInput.getText().toString().trim());
+            
+            List<String> selectedIngredients = new ArrayList<>();
+            if (checkChicken.isChecked()) selectedIngredients.add("Chicken");
+            if (checkRice.isChecked()) selectedIngredients.add("Rice");
+            if (checkTomato.isChecked()) selectedIngredients.add("Tomato");
+            if (checkPasta.isChecked()) selectedIngredients.add("Pasta");
+            
+            for (String ingredient : selectedIngredients) {
+                if (queryBuilder.length() > 0) queryBuilder.append(", ");
+                queryBuilder.append(ingredient);
+            }
+
             boolean isAI = acquisitionToggle.getCheckedButtonId() == R.id.toggleAI;
             String acquisitionMode = isAI ? "ai" : "local";
 
@@ -46,7 +67,7 @@ public class MainActivity extends AppCompatActivity {
             } else {
                 intent = new Intent(this, SearchResultsActivity.class);
             }
-            intent.putExtra("query", query);
+            intent.putExtra("query", queryBuilder.toString());
             intent.putExtra("acquisition_mode", acquisitionMode);
             intent.putExtra("spicy", spicyCheck.isChecked());
             intent.putExtra("vegetarian", vegetarianCheck.isChecked());
