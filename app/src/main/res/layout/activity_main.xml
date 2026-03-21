@@ -61,30 +61,17 @@
             android:textSize="16sp"
             android:textStyle="bold"
             android:layout_marginBottom="8dp" />
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+            <LinearLayout
+                android:id="@+id/ingredientsContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
 
-        <CheckBox
-            android:id="@+id/checkChicken"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Chicken" />
-
-        <CheckBox
-            android:id="@+id/checkRice"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Rice" />
-
-        <CheckBox
-            android:id="@+id/checkTomato"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Tomato" />
-
-        <CheckBox
-            android:id="@+id/checkPasta"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Pasta" />
+            </LinearLayout>
+        </ScrollView>
 
         <TextView
             android:layout_width="wrap_content"
