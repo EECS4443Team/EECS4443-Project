@@ -1,19 +1,25 @@
 package com.example.eecs4443project;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
+import android.webkit.WebResourceRequest;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 
 import androidx.activity.EdgeToEdge;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.button.MaterialButtonToggleGroup;
 
 import org.json.JSONArray;
@@ -22,8 +28,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
-    private final String[] INGREDIENTS = {"Chicken", "Rice", "Tomato", "Pasta"};
-    private List<CheckBox> checkBoxList = new ArrayList<>();
+    private final String[] INGREDIENTS = {"Chicken", "Beef", "Pork", "Shrimp", "Salmon", "Potato", "Spinach", "Mushroom","Tomato", "Onion", "Pasta", "Rice", "Cheese", "Bacon", "Garlic"};
+    private final List<CheckBox> checkBoxList = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,35 +57,20 @@ public class MainActivity extends AppCompatActivity {
             container.addView(checkBox);
         }
 
-//        CheckBox checkChicken = findViewById(R.id.checkChicken);
-//        CheckBox checkRice = findViewById(R.id.checkRice);
-//        CheckBox checkTomato = findViewById(R.id.checkTomato);
-//        CheckBox checkPasta = findViewById(R.id.checkPasta);
-        
         Button searchButton = findViewById(R.id.searchButton);
-
         acquisitionToggle.check(R.id.toggleManual);
 
         searchButton.setOnClickListener(v -> {
+            final String[] selectedRecipeUrl = {""};
             StringBuilder queryBuilder = new StringBuilder(searchInput.getText().toString().trim());
             JSONArray selectedIngredients = new JSONArray();
-            for (CheckBox  checkBox : checkBoxList) {
+            for (CheckBox checkBox : checkBoxList) {
                 if (checkBox.isChecked()) {
-                    Log.d(
-                            "MainActivity",
-                            "Selected ingredient: " + checkBox.getText().toString()
-                    );
+                    Log.d("MainActivity", "Selected ingredient: " + checkBox.getText().toString());
                     selectedIngredients.put(checkBox.getText().toString());
                 }
             }
 
-
-//            List<String> selectedIngredients = new ArrayList<>();
-//            if (checkChicken.isChecked()) selectedIngredients.add("Chicken");
-//            if (checkRice.isChecked()) selectedIngredients.add("Rice");
-//            if (checkTomato.isChecked()) selectedIngredients.add("Tomato");
-//            if (checkPasta.isChecked()) selectedIngredients.add("Pasta");
-            
             for (String ingredient : INGREDIENTS) {
                 if (queryBuilder.length() > 0) queryBuilder.append(", ");
                 queryBuilder.append(ingredient);
@@ -88,21 +79,79 @@ public class MainActivity extends AppCompatActivity {
             boolean isAI = acquisitionToggle.getCheckedButtonId() == R.id.toggleAI;
             String acquisitionMode = isAI ? "ai" : "local";
 
-            Intent intent;
-            if (isAI) {
-                intent = new Intent(this, AIResultsActivity.class);
+            // [Step 1] HtmlParser Search Triggered
+            Log.d("MainActivity", "--- [Step 1] HtmlParser Search Triggered ---");
+            Log.d("MainActivity", "Ingredients: " + selectedIngredients);
+
+            HtmlParser parser = new HtmlParser();
+            String searchUrl = parser.buildSearchUrl(selectedIngredients);
+            Log.d("MainActivity", "Search URL Generated: " + searchUrl);
+
+            if (acquisitionMode.equals("ai")) {
+                // AI Mode
+                Intent intent = new Intent(this, AIResultsActivity.class);
+                intent.putExtra("selected_ingredients", selectedIngredients.toString());
+                intent.putExtra("query", queryBuilder.toString());
+                intent.putExtra("acquisition_mode", acquisitionMode);
+                intent.putExtra("spicy", spicyCheck.isChecked());
+                intent.putExtra("vegetarian", vegetarianCheck.isChecked());
+                startActivity(intent);
             } else {
-                intent = new Intent(this, SearchResultsActivity.class);
+
+                // WebView and BottomSheet settings
+                com.google.android.material.bottomsheet.BottomSheetDialog bottomSheetDialog =
+                        new com.google.android.material.bottomsheet.BottomSheetDialog(this);
+
+                WebView webView = getWebView(selectedRecipeUrl, bottomSheetDialog, searchUrl);
+
+                //If the Dialog is dismissed(closed), move to SearchResultsActivity
+                bottomSheetDialog.setOnDismissListener(dialog -> {
+                    webView.stopLoading();
+                    webView.destroy();
+                    HtmlParser htmlParser = new HtmlParser(selectedRecipeUrl[0]);
+                    Recipe recipe = htmlParser.getRecipe();
+
+                    Intent intent = new Intent(this, RecipeDetailActivity.class);
+                    intent.putExtra("recipe", recipe);
+                    intent.putExtra("acquisition_mode", acquisitionMode);
+                    //To retrieve, Recipe user = (Recipe) getIntent().getSerializableExtra("recipe");
+                    startActivity(intent);
+                });
+
+                bottomSheetDialog.setContentView(webView);
+                bottomSheetDialog.show();
             }
-            //TODO : pass to HtmlParser
-            //HtmlParser parser = new HtmlParser();
-            // parser.searchRecipe(selectedIngredients);
-            intent.putExtra("selected_ingredients", selectedIngredients.toString());
-            intent.putExtra("query", queryBuilder.toString());
-            intent.putExtra("acquisition_mode", acquisitionMode);
-            intent.putExtra("spicy", spicyCheck.isChecked());
-            intent.putExtra("vegetarian", vegetarianCheck.isChecked());
-            startActivity(intent);
         });
+    }
+
+    @SuppressLint("SetJavaScriptEnabled")
+    @NonNull
+    private WebView getWebView(String[] selectedRecipeUrl, BottomSheetDialog bottomSheetDialog, String searchUrl) {
+        WebView webView = new WebView(this);
+        webView.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.MATCH_PARENT));
+
+        android.webkit.WebSettings webSettings = webView.getSettings();
+        webSettings.setJavaScriptEnabled(true);
+        webSettings.setDomStorageEnabled(true);
+        webView.setWebViewClient(new WebViewClient() {
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+                String url = request.getUrl().toString();
+
+                // Check whether the clicked url is not in SpendWithPennies's domain
+                if (url.startsWith("https://www.spendwithpennies.com/")) {
+                    selectedRecipeUrl[0] = url; // save the url
+                    Log.d("MainActivity", "Selected Recipe URL: " + selectedRecipeUrl[0]);
+                    bottomSheetDialog.dismiss(); // cloase the webview
+                    return true; //To prevent loading the url in the webview, we need to move to recipe detail activity.
+                }
+                return false;
+            }
+        });
+
+        webView.loadUrl(searchUrl);
+        return webView;
     }
 }
