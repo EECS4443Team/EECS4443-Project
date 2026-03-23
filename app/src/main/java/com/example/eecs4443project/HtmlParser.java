@@ -15,6 +15,8 @@ import org.jsoup.select.Elements;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * A class responsible for parsing recipe data (title, ingredients, and instructions) from a given URL.
@@ -23,8 +25,9 @@ import java.nio.charset.StandardCharsets;
 public class HtmlParser {
     private String url;
     private String title;
-    private JSONArray ingredients = new JSONArray();
-    private final JSONArray recipeInstructions = new JSONArray();
+    private String imageUrl;
+    private List<String> ingredients = new ArrayList<>();
+    private final List<String> recipeInstructions = new ArrayList<>();
     private static final String TAG = "HtmlParser";
 
     public HtmlParser() {}
@@ -66,7 +69,7 @@ public class HtmlParser {
      * Return the Recipe
      */
     public Recipe getRecipe() {
-        return new Recipe(this.title, this.ingredients, this.recipeInstructions);
+        return new Recipe(this.title, this.imageUrl, this.ingredients, this.recipeInstructions);
     }
 
     @NonNull
@@ -88,7 +91,24 @@ public class HtmlParser {
             Document doc = Jsoup.connect(url)
                     .userAgent("Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Mobile Safari/537.36")
                     .get();
+            Elements allImages = doc.select("img");
 
+            // Check number of images, if more than 1, select 2nd image
+            if (allImages.size() >= 2) {
+                Element secondImg = allImages.get(1);
+
+                // Chack data lazy src, if cannot find src
+                if (secondImg.hasAttr("data-lazy-src")) {
+                    this.imageUrl = secondImg.attr("data-lazy-src");
+                } else if (secondImg.hasAttr("src")) {
+                    // abs:src를 쓰면 상대 경로(예: /wp-content/...)를 절대 경로(예: https://...)로 바꿔줍니다.
+                    this.imageUrl = secondImg.attr("abs:src");
+                }
+
+                Log.d(TAG, "Successfully parsed Second Image URL: " + this.imageUrl);
+            } else {
+                Log.w(TAG, "Less than 2 images found on this page.");
+            }
             Elements scripts = doc.select("script[type=application/ld+json]");
 
             for (Element script : scripts) {
@@ -141,13 +161,24 @@ public class HtmlParser {
         this.title = recipe.optString("name");
 
         if (recipe.has("recipeIngredient")) {
-            this.ingredients = recipe.getJSONArray("recipeIngredient");
+            JSONArray ingredientsArray = recipe.getJSONArray("recipeIngredient");
+            for (int i = 0; i < ingredientsArray.length(); i++) {
+                this.ingredients.add(ingredientsArray.getString(i));
+            }
         }
 
         if (recipe.has("recipeInstructions")) {
             Object instructions = recipe.get("recipeInstructions");
             extractSteps(instructions);
         }
+
+        if (recipe.has("image")) {
+            Object imageObj = recipe.get("image");
+            if (imageObj instanceof  JSONArray){
+                this.imageUrl = ((JSONArray) imageObj).getString(0);
+            }
+        }
+
     }
 
     private void extractSteps(Object obj) throws JSONException {
@@ -160,16 +191,16 @@ public class HtmlParser {
             JSONObject node = (JSONObject) obj;
             String type = node.optString("@type");
 
-            if (type.equals("HowToStep")) {
+            if ("HowToStep".equals(type)) {
                 String stepText = node.optString("text");
-                recipeInstructions.put(stepText);
-            } else if (type.equals("HowToSection") || node.has("itemListElement")) {
+                recipeInstructions.add(stepText);
+            } else if ("HowToSection".equals(type) || node.has("itemListElement")) {
                 extractSteps(node.get("itemListElement"));
             } else if (node.has("text")) {
-                recipeInstructions.put(node.getString("text"));
+                recipeInstructions.add(node.getString("text"));
             }
         } else if (obj instanceof String) {
-            recipeInstructions.put(obj);
+            recipeInstructions.add((String) obj);
         }
     }
 }

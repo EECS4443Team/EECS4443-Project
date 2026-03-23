@@ -2,6 +2,7 @@ package com.example.eecs4443project;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.Button;
 import android.widget.TextView;
 
@@ -54,7 +55,18 @@ public class RecipeDetailActivity extends AppCompatActivity {
             recipeTitle.setText(title);
             recipeIngredients.setText(ingredients.toString().trim());
         }
-
+        else {
+            long recipeId = getIntent().getLongExtra("recipe_id", -1L);
+            Recipe recipe = RecipeDatabaseHelper.getInstance(this).getRecipe(recipeId);
+            Log.d("Recipe" , "Retrieved recipe: " + recipe.getTitle() + ", ingredients: " + recipe.getIngredients() + ", instructions: " + recipe.getInstructions() + ", id: " + recipe.id);
+            //recipe = (Recipe) getIntent().getSerializableExtra("recipe")
+            recipeTitle.setText(recipe.title);
+            StringBuilder ingredients = new StringBuilder();
+            for (String ingredient : recipe.ingredients) {
+                ingredients.append("-").append(ingredient).append("\n");
+            }
+            recipeIngredients.setText(ingredients.toString().trim());
+        }
         navToggle.check(R.id.toggleScroll);
 
         startCookingButton.setOnClickListener(v -> {
@@ -67,6 +79,11 @@ public class RecipeDetailActivity extends AppCompatActivity {
             }
             // Pass the recipe text forward if needed
             intent.putExtra("recipe_text", recipeText);
+            // We should also pass the recipe object if needed by the next activities
+            Recipe recipe = (Recipe) getIntent().getSerializableExtra("recipe");
+            if (recipe != null) {
+                intent.putExtra("recipe", recipe);
+            }
             startActivity(intent);
         });
     }
