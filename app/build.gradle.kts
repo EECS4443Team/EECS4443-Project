@@ -1,6 +1,13 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.secrets.gradle.plugin)
+}
+
+val localProperties = Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.inputStream().use { localProperties.load(it) }
 }
 
 android {
@@ -18,6 +25,9 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        val gemeniApiKey = localProperties.getProperty("GEMENI_API_KEY") ?: ""
+        buildConfigField("String", "GEMENI_API_KEY", "\"$gemeniApiKey\"")
     }
 
     buildTypes {
@@ -35,11 +45,6 @@ android {
     }
 }
 
-secrets {
-    // Specify the file name containing your secrets.
-    propertiesFileName = "secrets.properties"
-}
-
 dependencies {
     implementation(libs.appcompat)
     implementation(libs.material)
@@ -50,7 +55,5 @@ dependencies {
     androidTestImplementation(libs.espresso.core)
 
     implementation("com.google.ai.client.generativeai:generativeai:0.9.0")
-
-    // Update Guava to match
     implementation("com.google.guava:guava:33.0.0-android")
 }

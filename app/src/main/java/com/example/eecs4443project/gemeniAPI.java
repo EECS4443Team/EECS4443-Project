@@ -8,7 +8,7 @@ import com.google.ai.client.generativeai.type.GenerationConfig;
 import com.google.common.util.concurrent.ListenableFuture;
 
 public class gemeniAPI {
-    // This pulls your key from secrets.properties
+    // This pulls your key
     private static final String API_KEY = com.example.eecs4443project.BuildConfig.GEMENI_API_KEY;
 
     // Standard model ID for the 2.5 Flash model

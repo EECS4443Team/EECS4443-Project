@@ -9,6 +9,7 @@ import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.cardview.widget.CardView;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -20,8 +21,10 @@ import com.google.common.util.concurrent.Futures;
 
 public class AIResultsActivity extends AppCompatActivity {
 
-    private TextView aiOutput;
     private ProgressBar progressBar;
+    private TextView statusText;
+    private CardView recipeCard;
+    private TextView recipeTitle;
     private String generatedRecipe = "";
     private String recipeTitleText = "";
 
@@ -37,8 +40,10 @@ public class AIResultsActivity extends AppCompatActivity {
             return insets;
         });
 
-        aiOutput = findViewById(R.id.aiOutput);
         progressBar = findViewById(R.id.progressBar);
+        statusText = findViewById(R.id.statusText);
+        recipeCard = findViewById(R.id.recipeCard);
+        recipeTitle = findViewById(R.id.recipeTitle);
 
         String query = getIntent().getStringExtra("query");
         boolean isSpicy = getIntent().getBooleanExtra("spicy", false);
@@ -46,7 +51,7 @@ public class AIResultsActivity extends AppCompatActivity {
 
         fetchRecipe(query, isSpicy, isVegetarian);
 
-        findViewById(R.id.viewRecipeButton).setOnClickListener(v -> {
+        findViewById(R.id.recipeItemContainer).setOnClickListener(v -> {
             if (generatedRecipe != null && !generatedRecipe.isEmpty()) {
                 Intent intent = new Intent(this, RecipeDetailActivity.class);
                 intent.putExtra("acquisition_mode", "ai");
@@ -60,7 +65,9 @@ public class AIResultsActivity extends AppCompatActivity {
 
     private void fetchRecipe(String ingredients, boolean isSpicy, boolean isVegetarian) {
         progressBar.setVisibility(View.VISIBLE);
-        aiOutput.setText("Gemini is cooking up a recipe...");
+        statusText.setVisibility(View.VISIBLE);
+        statusText.setText("Gemini is cooking up a recipe...");
+        recipeCard.setVisibility(View.GONE);
 
         Futures.addCallback(
                 gemeniAPI.getRecipeFromAI(ingredients, isSpicy, isVegetarian),
@@ -69,21 +76,27 @@ public class AIResultsActivity extends AppCompatActivity {
                     public void onSuccess(GenerateContentResponse result) {
                         generatedRecipe = result.getText();
                         
-                        // Extract title for display in the results screen
+                        // Extract title for display
                         recipeTitleText = "New Recipe Found!";
                         if (generatedRecipe != null) {
                             String[] lines = generatedRecipe.split("\n");
                             for (String line : lines) {
-                                if (line.toLowerCase().contains("title:")) {
-                                    recipeTitleText = line.replaceAll("(?i)^.*title:\\s*", "").replaceAll("[\\*#]", "").trim();
+                                String cleanLine = line.trim().replaceAll("[\\*#]", "");
+                                if (cleanLine.toLowerCase().startsWith("title:")) {
+                                    recipeTitleText = cleanLine.substring(6).trim();
+                                    break;
+                                } else if (cleanLine.toLowerCase().startsWith("recipe name:")) {
+                                    recipeTitleText = cleanLine.substring(12).trim();
                                     break;
                                 }
                             }
                         }
 
                         runOnUiThread(() -> {
-                            aiOutput.setText(recipeTitleText + "\n\nClick 'View Recipe' below to see full details and start cooking!");
+                            recipeTitle.setText(recipeTitleText);
                             progressBar.setVisibility(View.GONE);
+                            statusText.setVisibility(View.GONE);
+                            recipeCard.setVisibility(View.VISIBLE);
                         });
                     }
 
@@ -91,7 +104,7 @@ public class AIResultsActivity extends AppCompatActivity {
                     public void onFailure(Throwable t) {
                         runOnUiThread(() -> {
                             progressBar.setVisibility(View.GONE);
-                            aiOutput.setText("Error generating recipe: " + t.getMessage());
+                            statusText.setText("Error generating recipe: " + t.getMessage());
                         });
                         t.printStackTrace();
                     }
