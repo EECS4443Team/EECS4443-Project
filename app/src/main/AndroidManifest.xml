@@ -32,7 +32,6 @@
         <activity android:name=".RecipeStepSwipeActivity" />
         <activity android:name=".SavedRecipesActivity" />
 
-
     </application>
 
 </manifest>

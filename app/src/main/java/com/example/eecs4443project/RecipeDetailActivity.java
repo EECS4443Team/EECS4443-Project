@@ -45,10 +45,10 @@ public class RecipeDetailActivity extends AppCompatActivity {
         Log.d(TAG, "Mode: " + mode);
         Log.d(TAG, "Recipe Text received: " + (recipeText != null ? "Yes" : "No"));
 
-        if ("ai".equals(mode) && recipeText != null) {
+        if (recipeText != null) {
+
             parseAndDisplayRecipe(recipeText, recipeTitle, recipeIngredients);
         }
-
         navToggle.check(R.id.toggleScroll);
 
         startCookingButton.setOnClickListener(v -> {
@@ -124,10 +124,9 @@ public class RecipeDetailActivity extends AppCompatActivity {
             Toast.makeText(this, "Failed to save recipe", Toast.LENGTH_SHORT).show();
         }
     }
-
     private void parseAndDisplayRecipe(String text, TextView titleView, TextView ingredientsView) {
         String[] lines = text.split("\n");
-        String title = "AI Generated Recipe";
+        String title  = "AI Generated Recipe";
         StringBuilder ingredients = new StringBuilder();
         
         boolean inIngredients = false;
