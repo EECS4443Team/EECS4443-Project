@@ -5,27 +5,27 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="24dp"
+    android:padding="16dp"
     android:background="#F8F9FA">
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="AI Recipe Suggester"
-        android:textSize="28sp"
+        android:textSize="24sp"
         android:textColor="#333333"
         android:fontFamily="sans-serif-medium"
         android:layout_gravity="center_horizontal"
-        android:layout_marginBottom="24dp" />
+        android:layout_marginBottom="16dp" />
 
     <ProgressBar
         android:id="@+id/progressBar"
         style="?android:attr/progressBarStyleLarge"
-        android:layout_width="60dp"
-        android:layout_height="60dp"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
         android:layout_gravity="center"
         android:visibility="gone"
-        android:layout_marginBottom="16dp" />
+        android:layout_marginBottom="8dp" />
 
     <TextView
         android:id="@+id/statusText"
@@ -34,59 +34,23 @@
         android:text="Searching for recipes..."
         android:layout_gravity="center"
         android:visibility="gone"
-        android:layout_marginBottom="24dp"/>
+        android:layout_marginBottom="16dp"/>
 
-    <androidx.cardview.widget.CardView
-        android:id="@+id/recipeCard"
+    <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_margin="8dp"
-        android:visibility="gone"
-        app:cardCornerRadius="12dp"
-        app:cardElevation="4dp"
-        app:cardBackgroundColor="@android:color/white">
+        android:layout_height="0dp"
+        android:layout_weight="1">
 
         <LinearLayout
-            android:id="@+id/recipeItemContainer"
+            android:id="@+id/recipeListContainer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="20dp"
-            android:clickable="true"
-            android:focusable="true"
-            android:background="?attr/selectableItemBackground">
+            android:orientation="vertical" />
+    </ScrollView>
 
-            <TextView
-                android:id="@+id/recipeTitle"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Recipe Name"
-                android:textSize="20sp"
-                android:textStyle="bold"
-                android:textColor="#2C3E50" />
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Click to view ingredients and instructions"
-                android:textSize="14sp"
-                android:textColor="#7F8C8D"
-                android:layout_marginTop="4dp" />
-
-        </LinearLayout>
-    </androidx.cardview.widget.CardView>
-
-    <TextView
-        android:id="@+id/aiOutput"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:visibility="gone" />
-
-    <!-- Hidden button to maintain existing logic if needed, but we'll use the card click -->
-    <Button
-        android:id="@+id/viewRecipeButton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:visibility="gone" />
+    <!-- Hidden views for compatibility -->
+    <TextView android:id="@+id/aiOutput" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" />
+    <androidx.cardview.widget.CardView android:id="@+id/recipeCard" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" />
+    <Button android:id="@+id/viewRecipeButton" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" />
 
 </LinearLayout>

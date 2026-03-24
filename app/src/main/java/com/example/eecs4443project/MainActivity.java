@@ -41,6 +41,7 @@ public class MainActivity extends AppCompatActivity {
         CheckBox checkPasta = findViewById(R.id.checkPasta);
         
         Button searchButton = findViewById(R.id.searchButton);
+        Button viewSavedButton = findViewById(R.id.viewSavedButton);
 
         acquisitionToggle.check(R.id.toggleManual);
 
@@ -71,6 +72,11 @@ public class MainActivity extends AppCompatActivity {
             intent.putExtra("acquisition_mode", acquisitionMode);
             intent.putExtra("spicy", spicyCheck.isChecked());
             intent.putExtra("vegetarian", vegetarianCheck.isChecked());
+            startActivity(intent);
+        });
+
+        viewSavedButton.setOnClickListener(v -> {
+            Intent intent = new Intent(this, SavedRecipesActivity.class);
             startActivity(intent);
         });
     }
