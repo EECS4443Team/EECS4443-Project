@@ -30,7 +30,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
-    private final String[] INGREDIENTS = {"Chicken", "Beef", "Pork", "Shrimp", "Salmon", "Potato", "Spinach", "Mushroom","Tomato", "Onion", "Pasta", "Rice", "Cheese", "Bacon", "Garlic"};
+    private final String[] INGREDIENTS = {"Chicken", "Beef", "Pork", "Shrimp", "Salmon", "Potato", "Spinach", "Mushroom", "Tomato", "Onion", "Pasta", "Rice", "Cheese", "Bacon", "Garlic"};
     private final List<CheckBox> checkBoxList = new ArrayList<>();
 
     @Override
@@ -60,6 +60,8 @@ public class MainActivity extends AppCompatActivity {
         }
 
         Button searchButton = findViewById(R.id.searchButton);
+        Button viewSavedButton = findViewById(R.id.viewSavedButton);
+
         acquisitionToggle.check(R.id.toggleManual);
 
         searchButton.setOnClickListener(v -> {
@@ -83,7 +85,7 @@ public class MainActivity extends AppCompatActivity {
             boolean isAI = acquisitionToggle.getCheckedButtonId() == R.id.toggleAI;
             String acquisitionMode = isAI ? "ai" : "local";
 
-            // [Step 1] HtmlParser Search Triggered
+            // HtmlParser Search Triggered
             Log.d("Recipe", "--- HtmlParser Search Triggered ---");
             Log.d("Recipe", "Ingredients: " + selectedIngredients);
 
@@ -108,41 +110,39 @@ public class MainActivity extends AppCompatActivity {
 
                 WebView webView = getWebView(selectedRecipeUrl, bottomSheetDialog, searchUrl);
 
-                //If the Dialog is dismissed(closed), move to SearchResultsActivity
+                //If the Dialog is dismissed(closed), move to RecipeDetailActivity
                 bottomSheetDialog.setOnDismissListener(dialog -> {
                     webView.stopLoading();
                     if (selectedRecipeUrl[0] == null || selectedRecipeUrl[0].isEmpty()) {
-                        Log.d("Recipe", "The user closed withou selecting recipe");
+                        Log.d("Recipe", "The user closed without selecting recipe");
                         webView.destroy();
                         return;
                     }
-                    new Thread (() -> {
+                    new Thread(() -> {
                         try {
 
-                        HtmlParser htmlParser = new HtmlParser(selectedRecipeUrl[0]);
-                        Recipe recipe = htmlParser.getRecipe();
-                        Log.d("recipe_debug", "Parsed Title: " + recipe.getTitle());
-                        runOnUiThread(() -> {
-                            if (recipe.getTitle() != null) {
-                                RecipeDatabaseHelper.getInstance(this).addRecipe(recipe);
-                                Log.d("recipe_debug", "After DB Insert ID: " + recipe.id);
+                            HtmlParser htmlParser = new HtmlParser(selectedRecipeUrl[0]);
+                            Recipe recipe = htmlParser.getRecipe();
+                            Log.d("recipe_debug", "Parsed Title: " + recipe.getTitle());
+                            runOnUiThread(() -> {
+                                if (recipe.getTitle() != null) {
+                                    // Move to RecipeDetailActivity passing the formatted recipe text
+                                    Intent intent = new Intent(this, RecipeDetailActivity.class);
+                                    intent.putExtra("recipe_text", recipe.toFormattedText());
+                                    // Use "ai" mode to reuse the text parsing logic in RecipeDetailActivity
+                                    intent.putExtra("acquisition_mode", "local");
+                                    Log.d("recipe_debug", "Title: " + recipe.title);
 
-                                Intent intent = new Intent(this, RecipeDetailActivity.class);
-                                intent.putExtra("recipe_id", recipe.id);
-                                intent.putExtra("acquisition_mode", acquisitionMode);
-                                Log.d("recipe_debug", "ID: " + recipe.id + ", Title: " + recipe.title);
-
-                                webView.destroy();
-                                startActivity(intent);
-                            } else {
-                                Log.e("recipe_debug", "Parsing failed: Title is null");
-                            }
-                        });
+                                    webView.destroy();
+                                    startActivity(intent);
+                                } else {
+                                    Log.e("recipe_debug", "Parsing failed: Title is null");
+                                }
+                            });
                         } catch (Exception e) {
                             Log.e("recipe_debug", "Error in Thread: " + e.getMessage());
                         }
                     }).start();
-
 
 
                 });
@@ -156,6 +156,11 @@ public class MainActivity extends AppCompatActivity {
                             .setState(com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED);
                 }
             }
+        });
+
+        viewSavedButton.setOnClickListener(v -> {
+            Intent intent = new Intent(this, SavedRecipesActivity.class);
+            startActivity(intent);
         });
     }
 
@@ -179,7 +184,7 @@ public class MainActivity extends AppCompatActivity {
                 if (!url.equals(searchUrl)) {
                     selectedRecipeUrl[0] = url; // save the url
                     Log.d("Recipe", "Selected Recipe URL: " + selectedRecipeUrl[0]);
-                    bottomSheetDialog.dismiss(); // cloase the webview
+                    bottomSheetDialog.dismiss(); // close the webview
                     return true; //To prevent loading the url in the webview, we need to move to recipe detail activity.
                 }
                 return false;

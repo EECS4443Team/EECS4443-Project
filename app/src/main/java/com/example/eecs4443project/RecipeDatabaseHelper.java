@@ -5,38 +5,30 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.text.TextUtils;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class RecipeDatabaseHelper extends SQLiteOpenHelper {
-    private static final String DATABASE_NAME = "recipe_app.db";
+
+    private static final String DATABASE_NAME = "RecipeDatabase.db";
     private static final int DATABASE_VERSION = 1;
 
-    // Table Names
-    public static final String TABLE_RECIPES = "recipes";
-    public static final String TABLE_INGREDIENTS = "ingredients";
-    public static final String TABLE_INSTRUCTIONS = "instructions";
-
-    // Common Column Names
+    public static final String TABLE_NAME = "saved_recipes";
     public static final String COLUMN_ID = "_id";
-    public static final String COLUMN_RECIPE_ID_FK = "recipe_id";
-
-    // Recipes Columns
-    public static final String COL_RECIPE_NAME = "name";
-    public static final String COL_DESCRIPTION = "description";
-    public static final String COL_PREP_TIME = "prep_time";
-    public static final String COL_COOK_TIME = "cook_time";
-    public static final String COL_YIELD = "recipe_yield";
-
-    // Ingredients Columns
-    public static final String COL_INGREDIENT_NAME = "ingredient_name";
-
-    // Instructions Columns
-    public static final String COL_STEP_NUMBER = "step_number";
-    public static final String COL_STEP_TEXT = "instruction_text";
-
+    public static final String COLUMN_TITLE = "title";
+    public static final String COLUMN_INGREDIENTS = "ingredients";
+    public static final String COLUMN_INSTRUCTIONS = "instructions";
     private static RecipeDatabaseHelper instance;
+
+    private static final String TABLE_CREATE =
+            "CREATE TABLE " + TABLE_NAME + " (" +
+                    COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                    COLUMN_TITLE + " TEXT, " +
+                    COLUMN_INGREDIENTS + " TEXT, " +
+                    COLUMN_INSTRUCTIONS + " TEXT);";
 
     public RecipeDatabaseHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -51,71 +43,7 @@ public class RecipeDatabaseHelper extends SQLiteOpenHelper {
 
     @Override
     public void onCreate(SQLiteDatabase db) {
-        // Create Recipe Table
-        String CREATE_RECIPE_TABLE = "CREATE TABLE " + TABLE_RECIPES + " (" +
-                COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                COL_RECIPE_NAME + " TEXT NOT NULL, " +
-                COL_DESCRIPTION + " TEXT, " +
-                COL_PREP_TIME + " TEXT, " +
-                COL_COOK_TIME + " TEXT, " +
-                COL_YIELD + " TEXT" + ")";
-
-        // Create Ingredients Table
-        String CREATE_INGREDIENTS_TABLE = "CREATE TABLE " + TABLE_INGREDIENTS + " (" +
-                COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                COLUMN_RECIPE_ID_FK + " INTEGER, " +
-                COL_INGREDIENT_NAME + " TEXT NOT NULL, " +
-                "FOREIGN KEY (" + COLUMN_RECIPE_ID_FK + ") REFERENCES " + TABLE_RECIPES + "(" + COLUMN_ID + ") ON DELETE CASCADE" + ")";
-
-        // Create Instructions Table
-        String CREATE_INSTRUCTIONS_TABLE = "CREATE TABLE " + TABLE_INSTRUCTIONS + " (" +
-                COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                COLUMN_RECIPE_ID_FK + " INTEGER, " +
-                COL_STEP_NUMBER + " INTEGER, " +
-                COL_STEP_TEXT + " TEXT NOT NULL, " +
-                "FOREIGN KEY (" + COLUMN_RECIPE_ID_FK + ") REFERENCES " + TABLE_RECIPES + "(" + COLUMN_ID + ") ON DELETE CASCADE" + ")";
-
-        db.execSQL(CREATE_RECIPE_TABLE);
-        db.execSQL(CREATE_INGREDIENTS_TABLE);
-        db.execSQL(CREATE_INSTRUCTIONS_TABLE);
-    }
-
-    /**
-     * Inserts a new recipe into the database.
-     * This method saves the core recipe details into the recipes table, then inserts
-     * all associated ingredients and instructions into their respective tables.
-     * After a successful insertion, the provided {@link Recipe} object's ID is updated
-     * with the newly generated database ID.
-     *
-     * @param recipe The {@link Recipe} object containing the data to be stored.
-     */
-    public void addRecipe(Recipe recipe) {
-        SQLiteDatabase db = this.getWritableDatabase();
-        ContentValues recipeValues = new ContentValues();
-        recipeValues.put(COL_RECIPE_NAME, recipe.getTitle());
-
-
-        long recipeId = db.insert(TABLE_RECIPES, null, recipeValues);
-        recipe.id = recipeId;
-
-        for (String ingredient : recipe.getIngredients()) {
-            ContentValues values = new ContentValues();
-            values.put(COLUMN_RECIPE_ID_FK, recipeId);
-            values.put(COL_INGREDIENT_NAME, ingredient);
-            db.insert(TABLE_INGREDIENTS, null, values);
-        }
-
-
-        int stepNum = 1;
-        for (String step : recipe.getInstructions()) {
-            ContentValues values = new ContentValues();
-            values.put(COLUMN_RECIPE_ID_FK, recipeId);
-            values.put(COL_STEP_NUMBER, stepNum++);
-            values.put(COL_STEP_TEXT, step);
-            db.insert(TABLE_INSTRUCTIONS, null, values);
-        }
-
-        db.close();
+        db.execSQL(TABLE_CREATE);
     }
 
     /**
@@ -128,40 +56,48 @@ public class RecipeDatabaseHelper extends SQLiteOpenHelper {
      */
     public Recipe getRecipe(long recipeId) {
         SQLiteDatabase db = this.getReadableDatabase();
+        Recipe recipe = null;
+        Cursor cursor = null;
 
+        try {
 
-        Cursor cursor = db.query(TABLE_RECIPES, null, COLUMN_ID + "=?",
-                new String[]{String.valueOf(recipeId)}, null, null, null);
+            cursor = db.query(
+                    TABLE_NAME,
+                    null,
+                    COLUMN_ID + "=?",
+                    new String[]{String.valueOf(recipeId)},
+                    null, null, null
+            );
 
-        if (cursor.moveToFirst()) {
-            long id = cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_ID));
-            String title = cursor.getString(cursor.getColumnIndexOrThrow(COL_RECIPE_NAME));
-            cursor.close();
+            if (cursor != null && cursor.moveToFirst()) {
 
+                long id = cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_ID));
+                String title = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_TITLE));
+                String ingredientsRaw = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_INGREDIENTS));
+                String instructionsRaw = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_INSTRUCTIONS));
 
-            List<String> ingredients = new ArrayList<>();
-            Cursor ingCursor = db.query(TABLE_INGREDIENTS, new String[]{COL_INGREDIENT_NAME},
-                    COLUMN_RECIPE_ID_FK + "=?", new String[]{String.valueOf(recipeId)}, null, null, null);
-            while (ingCursor.moveToNext()) {
-                ingredients.add(ingCursor.getString(0));
+                List<String> ingredients = new ArrayList<>();
+                if (!TextUtils.isEmpty(ingredientsRaw)) {
+                    ingredients.addAll(Arrays.asList(ingredientsRaw.split("\n")));
+                }
+
+                List<String> instructions = new ArrayList<>();
+                if (!TextUtils.isEmpty(instructionsRaw)) {
+                    instructions.addAll(Arrays.asList(instructionsRaw.split("\n")));
+                }
+
+                recipe = new Recipe(id, title, ingredients, instructions);
             }
-            ingCursor.close();
-
-
-            List<String> instructions = new ArrayList<>();
-            Cursor insCursor = db.query(TABLE_INSTRUCTIONS, new String[]{COL_STEP_TEXT},
-                    COLUMN_RECIPE_ID_FK + "=?", new String[]{String.valueOf(recipeId)}, null, null, COL_STEP_NUMBER + " ASC");
-            while (insCursor.moveToNext()) {
-                instructions.add(insCursor.getString(0));
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            if (cursor != null && !cursor.isClosed()) {
+                cursor.close();
             }
-            insCursor.close();
-
-            return new Recipe(id, title, ingredients, instructions);
         }
-        return null;
+
+        return recipe;
     }
-    //RecipeDatabaseHelper.getInstance(this).getRecipe(recipeId);
-    //RecipeDatabaseHelper.getInstance(this).addRecipe(recipeId);
     public static synchronized RecipeDatabaseHelper getInstance(Context context) {
         if (instance == null) {
             instance = new RecipeDatabaseHelper(context.getApplicationContext());
@@ -171,10 +107,45 @@ public class RecipeDatabaseHelper extends SQLiteOpenHelper {
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        // Simple strategy: drop tables and recreate them
-        db.execSQL("DROP TABLE IF EXISTS " + TABLE_INGREDIENTS);
-        db.execSQL("DROP TABLE IF EXISTS " + TABLE_INSTRUCTIONS);
-        db.execSQL("DROP TABLE IF EXISTS " + TABLE_RECIPES);
+        db.execSQL("DROP TABLE IF EXISTS " + TABLE_NAME);
         onCreate(db);
+    }
+
+    /**
+     * Extracts data from a {@link Recipe} object and saves it to the database.
+     * Lists of ingredients and instructions are converted to newline-separated strings.
+     *
+     * @param recipe The Recipe object to save.
+     * @return The row ID of the newly inserted row, or -1 if an error occurred.
+     */
+    public long saveRecipe(Recipe recipe) {
+        String ingredientsStr = TextUtils.join("\n", recipe.getIngredients());
+        String instructionsStr = TextUtils.join("\n", recipe.getInstructions());
+        return saveRecipe(recipe.getTitle(), ingredientsStr, instructionsStr);
+    }
+
+    /**
+     * Saves a recipe to the database using raw strings.
+     *
+     * @param title        The recipe title.
+     * @param ingredients  The ingredients as a newline-separated string.
+     * @param instructions The instructions as a newline-separated string.
+     * @return The row ID of the newly inserted row, or -1 if an error occurred.
+     */
+    public long saveRecipe(String title, String ingredients, String instructions) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(COLUMN_TITLE, title);
+        values.put(COLUMN_INGREDIENTS, ingredients);
+        values.put(COLUMN_INSTRUCTIONS, instructions);
+
+        long id = db.insert(TABLE_NAME, null, values);
+        db.close();
+        return id;
+    }
+
+    public Cursor getAllSavedRecipes() {
+        SQLiteDatabase db = this.getReadableDatabase();
+        return db.query(TABLE_NAME, null, null, null, null, null, COLUMN_ID + " DESC");
     }
 }

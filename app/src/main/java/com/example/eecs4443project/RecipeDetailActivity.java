@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -15,6 +16,8 @@ import androidx.core.view.WindowInsetsCompat;
 import com.google.android.material.button.MaterialButtonToggleGroup;
 
 public class RecipeDetailActivity extends AppCompatActivity {
+    private static final String TAG = "RecipeDetailActivity";
+    private RecipeDatabaseHelper dbHelper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -27,45 +30,24 @@ public class RecipeDetailActivity extends AppCompatActivity {
             return insets;
         });
 
+        dbHelper = new RecipeDatabaseHelper(this);
+
         TextView recipeTitle = findViewById(R.id.recipeTitle);
         TextView recipeIngredients = findViewById(R.id.recipeIngredients);
         MaterialButtonToggleGroup navToggle = findViewById(R.id.navToggle);
         Button startCookingButton = findViewById(R.id.startCookingButton);
+        Button saveRecipeButton = findViewById(R.id.saveRecipeButton);
 
         // Get the recipe data from Intent
         String mode = getIntent().getStringExtra("acquisition_mode");
         String recipeText = getIntent().getStringExtra("recipe_text");
 
-        if ("ai".equals(mode) && recipeText != null) {
-            // Simple parsing for AI output
-            String[] lines = recipeText.split("\n");
-            String title = "AI Generated Recipe";
-            StringBuilder ingredients = new StringBuilder();
+        Log.d(TAG, "Mode: " + mode);
+        Log.d(TAG, "Recipe Text received: " + (recipeText != null ? "Yes" : "No"));
 
-            boolean foundTitle = false;
-            for (String line : lines) {
-                if (line.toLowerCase().startsWith("title:") && !foundTitle) {
-                    title = line.substring(6).trim();
-                    foundTitle = true;
-                } else {
-                    ingredients.append(line).append("\n");
-                }
-            }
+        if (recipeText != null) {
 
-            recipeTitle.setText(title);
-            recipeIngredients.setText(ingredients.toString().trim());
-        }
-        else {
-            long recipeId = getIntent().getLongExtra("recipe_id", -1L);
-            Recipe recipe = RecipeDatabaseHelper.getInstance(this).getRecipe(recipeId);
-            Log.d("Recipe" , "Retrieved recipe: " + recipe.getTitle() + ", ingredients: " + recipe.getIngredients() + ", instructions: " + recipe.getInstructions() + ", id: " + recipe.id);
-            //recipe = (Recipe) getIntent().getSerializableExtra("recipe")
-            recipeTitle.setText(recipe.title);
-            StringBuilder ingredients = new StringBuilder();
-            for (String ingredient : recipe.ingredients) {
-                ingredients.append("-").append(ingredient).append("\n");
-            }
-            recipeIngredients.setText(ingredients.toString().trim());
+            parseAndDisplayRecipe(recipeText, recipeTitle, recipeIngredients);
         }
         navToggle.check(R.id.toggleScroll);
 
@@ -77,14 +59,122 @@ public class RecipeDetailActivity extends AppCompatActivity {
             } else {
                 intent = new Intent(this, RecipeStepScrollActivity.class);
             }
-            // Pass the recipe text forward if needed
             intent.putExtra("recipe_text", recipeText);
-            // We should also pass the recipe object if needed by the next activities
-            Recipe recipe = (Recipe) getIntent().getSerializableExtra("recipe");
-            if (recipe != null) {
-                intent.putExtra("recipe", recipe);
-            }
             startActivity(intent);
         });
+
+        saveRecipeButton.setOnClickListener(v -> {
+            if (recipeText != null) {
+                saveRecipeToDatabase(recipeText);
+            } else {
+                Toast.makeText(this, "No recipe data to save", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private void saveRecipeToDatabase(String text) {
+        String title = "AI Generated Recipe";
+        StringBuilder ingredients = new StringBuilder();
+        StringBuilder instructions = new StringBuilder();
+        
+        String[] lines = text.split("\n");
+        boolean inIngredients = false;
+        boolean inInstructions = false;
+
+        for (String line : lines) {
+            String cleanLine = line.trim().replaceAll("[\\*#]", "");
+            String lowerLine = cleanLine.toLowerCase();
+
+            if (lowerLine.contains("title:")) {
+                title = cleanLine.substring(lowerLine.indexOf("title:") + 6).trim();
+            } else if (lowerLine.startsWith("recipe #")) {
+                int colonIndex = cleanLine.indexOf(":");
+                if (colonIndex != -1) {
+                    title = cleanLine.substring(colonIndex + 1).trim();
+                }
+            } else if (lowerLine.contains("ingredients:")) {
+                inIngredients = true;
+                inInstructions = false;
+                String restOfLine = cleanLine.substring(lowerLine.indexOf("ingredients:") + 12).trim();
+                if (!restOfLine.isEmpty()) {
+                    ingredients.append(restOfLine).append("\n");
+                }
+            } else if (lowerLine.contains("instructions:") || lowerLine.contains("steps:") || lowerLine.contains("directions:")) {
+                inIngredients = false;
+                inInstructions = true;
+                int colonIdx = lowerLine.indexOf("instructions:");
+                if (colonIdx == -1) colonIdx = lowerLine.indexOf("steps:");
+                if (colonIdx == -1) colonIdx = lowerLine.indexOf("directions:");
+                
+                String restOfLine = cleanLine.substring(cleanLine.indexOf(":") + 1).trim();
+                if (!restOfLine.isEmpty()) {
+                    instructions.append(restOfLine).append("\n");
+                }
+            } else if (inIngredients && !cleanLine.isEmpty()) {
+                ingredients.append(cleanLine).append("\n");
+            } else if (inInstructions && !cleanLine.isEmpty()) {
+                instructions.append(cleanLine).append("\n");
+            }
+        }
+
+        long id = dbHelper.saveRecipe(title, ingredients.toString().trim(), instructions.toString().trim());
+        if (id != -1) {
+            Toast.makeText(this, "Recipe saved successfully!", Toast.LENGTH_SHORT).show();
+        } else {
+            Toast.makeText(this, "Failed to save recipe", Toast.LENGTH_SHORT).show();
+        }
+    }
+    private void parseAndDisplayRecipe(String text, TextView titleView, TextView ingredientsView) {
+        String[] lines = text.split("\n");
+        String title  = "AI Generated Recipe";
+        StringBuilder ingredients = new StringBuilder();
+        
+        boolean inIngredients = false;
+
+        for (String line : lines) {
+            String cleanLine = line.trim().replaceAll("[\\*#]", "");
+            String lowerLine = cleanLine.toLowerCase();
+
+            // Skip preamble lines
+            if (lowerLine.contains("here are 10") || lowerLine.contains("brief and concise")) {
+                continue;
+            }
+
+            if (lowerLine.contains("title:")) {
+                title = cleanLine.substring(lowerLine.indexOf("title:") + 6).trim();
+            } else if (lowerLine.startsWith("recipe #")) {
+                int colonIndex = cleanLine.indexOf(":");
+                if (colonIndex != -1) {
+                    title = cleanLine.substring(colonIndex + 1).trim();
+                }
+            } else if (lowerLine.contains("ingredients:")) {
+                inIngredients = true;
+                String restOfLine = cleanLine.substring(lowerLine.indexOf("ingredients:") + 12).trim();
+                if (!restOfLine.isEmpty()) {
+                    ingredients.append("• ").append(restOfLine).append("\n");
+                }
+            } else if (lowerLine.contains("instructions:")) {
+                inIngredients = false;
+            } else if (inIngredients && !cleanLine.isEmpty()) {
+                if (!lowerLine.contains("prep time:") && !lowerLine.contains("recipe #")) {
+                    ingredients.append("• ").append(cleanLine).append("\n");
+                }
+            }
+        }
+
+        titleView.setText(title);
+        if (ingredients.length() > 0) {
+            ingredientsView.setText(ingredients.toString().trim());
+        } else {
+            // Fallback: clean the text but keep structure if parsing failed
+            StringBuilder fallback = new StringBuilder();
+            for (String line : lines) {
+                String clean = line.trim();
+                if (!clean.toLowerCase().contains("here are 10") && !clean.isEmpty()) {
+                    fallback.append(clean).append("\n");
+                }
+            }
+            ingredientsView.setText(fallback.toString().trim());
+        }
     }
 }

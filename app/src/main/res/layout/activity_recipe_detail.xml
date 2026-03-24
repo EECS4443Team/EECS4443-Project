@@ -71,6 +71,7 @@
                 android:text="@string/toggle_card_view" />
 
         </com.google.android.material.button.MaterialButtonToggleGroup>
+
         <com.google.android.material.button.MaterialButtonToggleGroup
             android:id="@+id/handToggle"
             android:layout_width="match_parent"
@@ -96,6 +97,15 @@
                 android:text="@string/toggle_two_hand_mode" />
 
         </com.google.android.material.button.MaterialButtonToggleGroup>
+
+        <Button
+            android:id="@+id/saveRecipeButton"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Save Recipe"
+            android:layout_marginBottom="8dp" />
+
         <Button
             android:id="@+id/startCookingButton"
             android:layout_width="match_parent"
