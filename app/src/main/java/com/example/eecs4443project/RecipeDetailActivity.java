@@ -3,6 +3,7 @@ package com.example.eecs4443project;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -18,6 +19,7 @@ import com.google.android.material.button.MaterialButtonToggleGroup;
 public class RecipeDetailActivity extends AppCompatActivity {
     private static final String TAG = "RecipeDetailActivity";
     private RecipeDatabaseHelper dbHelper;
+    private String currentRecipeTitle = "AI Generated Recipe";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,14 +43,19 @@ public class RecipeDetailActivity extends AppCompatActivity {
         // Get the recipe data from Intent
         String mode = getIntent().getStringExtra("acquisition_mode");
         String recipeText = getIntent().getStringExtra("recipe_text");
+        boolean isAlreadySaved = getIntent().getBooleanExtra("is_saved", false);
 
         Log.d(TAG, "Mode: " + mode);
         Log.d(TAG, "Recipe Text received: " + (recipeText != null ? "Yes" : "No"));
 
         if (recipeText != null) {
-
             parseAndDisplayRecipe(recipeText, recipeTitle, recipeIngredients);
         }
+
+        if (isAlreadySaved || dbHelper.isRecipeSaved(currentRecipeTitle)) {
+            saveRecipeButton.setVisibility(View.GONE);
+        }
+
         navToggle.check(R.id.toggleScroll);
 
         startCookingButton.setOnClickListener(v -> {
@@ -66,6 +73,7 @@ public class RecipeDetailActivity extends AppCompatActivity {
         saveRecipeButton.setOnClickListener(v -> {
             if (recipeText != null) {
                 saveRecipeToDatabase(recipeText);
+                saveRecipeButton.setVisibility(View.GONE);
             } else {
                 Toast.makeText(this, "No recipe data to save", Toast.LENGTH_SHORT).show();
             }
@@ -162,6 +170,7 @@ public class RecipeDetailActivity extends AppCompatActivity {
             }
         }
 
+        currentRecipeTitle = title;
         titleView.setText(title);
         if (ingredients.length() > 0) {
             ingredientsView.setText(ingredients.toString().trim());

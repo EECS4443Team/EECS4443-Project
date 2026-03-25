@@ -23,4 +23,13 @@
         android:textSize="16sp"
         android:text="@string/recipe_name_placeholder" />
 
+    <ImageButton
+        android:id="@+id/deleteRecipeButton"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:src="@android:drawable/ic_menu_delete"
+        android:contentDescription="Delete recipe"
+        android:visibility="gone" />
+
 </LinearLayout>
