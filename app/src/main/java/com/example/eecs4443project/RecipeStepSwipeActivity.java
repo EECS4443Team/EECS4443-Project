@@ -2,6 +2,7 @@ package com.example.eecs4443project;
 
 import android.annotation.SuppressLint;
 import android.os.Bundle;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.ScaleGestureDetector;
 import android.view.View;
@@ -53,7 +54,10 @@ public class RecipeStepSwipeActivity extends AppCompatActivity {
         seekBar = findViewById(R.id.seekBar);
 
         linearLayoutManager = new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false);
-        gridLayoutManager = new GridLayoutManager(this, 3);
+        
+        int spanCount = calculateSpanCount();
+        gridLayoutManager = new GridLayoutManager(this, spanCount);
+        
         snapHelper = new PagerSnapHelper();
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
@@ -94,7 +98,6 @@ public class RecipeStepSwipeActivity extends AppCompatActivity {
         scaleGestureDetector = new ScaleGestureDetector(this, new ScaleGestureDetector.SimpleOnScaleGestureListener() {
             @Override
             public boolean onScale(@NonNull ScaleGestureDetector detector) {
-                // Pinch-in detected (scaleFactor < 1)
                 if (handMode == 2 && !isGridView && detector.getScaleFactor() < 0.8f) {
                     switchToGrid();
                     return true;
@@ -115,10 +118,22 @@ public class RecipeStepSwipeActivity extends AppCompatActivity {
 
         nextButton.setOnClickListener(v -> {
             int current = linearLayoutManager.findFirstVisibleItemPosition();
-            if (current < steps.size() - 1) recyclerView.smoothScrollToPosition(current + 1);
+            if (current < steps.size() - 1) {
+                recyclerView.smoothScrollToPosition(current + 1);
+            } else {
+                // Return to previous activity when Finish is clicked
+                finish();
+            }
         });
 
         updateUI(0);
+    }
+
+    private int calculateSpanCount() {
+        DisplayMetrics displayMetrics = getResources().getDisplayMetrics();
+        float dpWidth = displayMetrics.widthPixels / displayMetrics.density;
+        int count = (int) (dpWidth / 150); 
+        return Math.max(3, count);
     }
 
     private void switchToSwipeAtPosition(int position) {
@@ -174,7 +189,10 @@ public class RecipeStepSwipeActivity extends AppCompatActivity {
         stepIndicator.setText("Step " + (position + 1));
         seekBar.setProgress(position);
         prevButton.setEnabled(position > 0);
-        nextButton.setEnabled(position < steps.size() - 1);
+        
+        // Always enabled to allow "Finish" click on the last step
+        nextButton.setEnabled(true);
+
         if (position == steps.size() - 1) {
             nextButton.setText("Finish");
         } else {
