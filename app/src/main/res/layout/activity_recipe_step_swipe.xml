@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -10,35 +11,21 @@
         android:id="@+id/stepIndicator"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/step_1"
+        android:text="Step 1"
         android:textSize="20sp"
         android:textStyle="bold"
         android:gravity="center"
         android:layout_marginBottom="24dp" />
 
-    <com.google.android.material.card.MaterialCardView
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recipeRecyclerView"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:layout_marginBottom="24dp">
-
-        <ScrollView
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:fillViewport="true">
-
-            <TextView
-                android:id="@+id/stepContent"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/step_placeholder"
-                android:textSize="16sp"
-                android:padding="24dp"
-                android:gravity="center" />
-
-        </ScrollView>
-
-    </com.google.android.material.card.MaterialCardView>
+        android:layout_marginBottom="24dp"
+        android:clipChildren="false"
+        android:clipToPadding="false"
+        android:overScrollMode="never" />
 
     <SeekBar
         android:id="@+id/seekBar"
@@ -58,7 +45,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="@string/button_previous" />
+            android:text="Previous" />
 
         <Button
             android:id="@+id/nextButton"
@@ -66,7 +53,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="@string/button_next" />
+            android:text="Next" />
 
     </LinearLayout>
 

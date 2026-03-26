@@ -1,13 +1,16 @@
 package com.example.eecs4443project;
 
+import android.annotation.SuppressLint;
 import android.os.Bundle;
-import android.util.Log;
+import android.util.TypedValue;
 import android.view.LayoutInflater;
+import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -18,12 +21,21 @@ import java.util.List;
 
 public class RecipeStepScrollActivity extends AppCompatActivity {
     private static final String TAG = "RecipeStepScroll";
+    private LinearLayout stepsContainer;
+    private float currentTextSize = 16f; // Default text size in SP
+    private final float MIN_TEXT_SIZE = 10f;
+    private final float MAX_TEXT_SIZE = 40f;
+    private ScaleGestureDetector scaleGestureDetector;
+    private int handMode = 1;
 
+    @SuppressLint("ClickableViewAccessibility")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_recipe_step_scroll);
+
+        handMode = getIntent().getIntExtra("handMode", 1);
         
         View mainView = findViewById(R.id.main);
         if (mainView != null) {
@@ -37,11 +49,10 @@ public class RecipeStepScrollActivity extends AppCompatActivity {
         TextView stepTitle = findViewById(R.id.stepTitle);
         stepTitle.setText("Cooking Instructions");
 
-        LinearLayout stepsContainer = findViewById(R.id.stepsContainer);
+        stepsContainer = findViewById(R.id.stepsContainer);
         stepsContainer.removeAllViews();
 
         String recipeText = getIntent().getStringExtra("recipe_text");
-        Log.d(TAG, "Recipe Text: " + recipeText);
 
         if (recipeText != null) {
             String ingredients = parseIngredients(recipeText);
@@ -51,13 +62,30 @@ public class RecipeStepScrollActivity extends AppCompatActivity {
 
             List<String> steps = parseSteps(recipeText);
             if (steps.isEmpty()) {
-                // Fallback if steps parsing failed, try to show something
                 addStepToView("Follow the instructions provided in the recipe details.", 1, stepsContainer);
             } else {
                 for (int i = 0; i < steps.size(); i++) {
                     addStepToView(steps.get(i), i + 1, stepsContainer);
                 }
             }
+        }
+
+        // Setup Pinch-to-Zoom for Two Hands Mode
+        if (handMode == 2) {
+            scaleGestureDetector = new ScaleGestureDetector(this, new ScaleGestureDetector.SimpleOnScaleGestureListener() {
+                @Override
+                public boolean onScale(@NonNull ScaleGestureDetector detector) {
+                    currentTextSize *= detector.getScaleFactor();
+                    currentTextSize = Math.max(MIN_TEXT_SIZE, Math.min(currentTextSize, MAX_TEXT_SIZE));
+                    updateAllTextSizes();
+                    return true;
+                }
+            });
+
+            findViewById(R.id.scrollView2).setOnTouchListener((v, event) -> {
+                scaleGestureDetector.onTouchEvent(event);
+                return false; // Allow scrolling
+            });
         }
         
         View topButton = findViewById(R.id.topButton);
@@ -71,6 +99,16 @@ public class RecipeStepScrollActivity extends AppCompatActivity {
         }
     }
 
+    private void updateAllTextSizes() {
+        for (int i = 0; i < stepsContainer.getChildCount(); i++) {
+            View itemView = stepsContainer.getChildAt(i);
+            TextView textView = itemView.findViewById(R.id.stepText);
+            if (textView != null) {
+                textView.setTextSize(TypedValue.COMPLEX_UNIT_SP, currentTextSize);
+            }
+        }
+    }
+
     private String parseIngredients(String text) {
         String[] lines = text.split("\n");
         StringBuilder ingredientsBuilder = new StringBuilder();
@@ -80,7 +118,6 @@ public class RecipeStepScrollActivity extends AppCompatActivity {
             String cleanLine = line.trim().replaceAll("[\\*#]", "");
             String lowerLine = cleanLine.toLowerCase();
 
-            // Detect ingredients header more robustly (with or without colon)
             if (lowerLine.contains("ingredients")) {
                 inIngredients = true;
                 int colonIdx = cleanLine.indexOf(":");
@@ -93,14 +130,12 @@ public class RecipeStepScrollActivity extends AppCompatActivity {
                 continue;
             }
 
-            // Detect end of ingredients section
             if (lowerLine.contains("instructions") || lowerLine.contains("steps") || lowerLine.contains("directions")) {
                 inIngredients = false;
                 continue;
             }
 
             if (inIngredients && !cleanLine.isEmpty()) {
-                // Prepend bullet point if not already present
                 if (!cleanLine.startsWith("•") && !cleanLine.startsWith("-")) {
                     ingredientsBuilder.append("• ").append(cleanLine).append("\n");
                 } else {
@@ -131,7 +166,6 @@ public class RecipeStepScrollActivity extends AppCompatActivity {
                 continue;
             }
 
-            // If we hit another major section, stop parsing instructions
             if (inInstructions && (lowerLine.contains("ingredients") || lowerLine.contains("notes") || lowerLine.contains("prep time"))) {
                 if (currentStep.length() > 0) {
                     steps.add(currentStep.toString().trim());
@@ -142,16 +176,13 @@ public class RecipeStepScrollActivity extends AppCompatActivity {
             }
 
             if (inInstructions && !cleanLine.isEmpty()) {
-                // Check if line starts with a step number like "1." or "1)"
                 if (cleanLine.matches("^\\d+[\\.\\)].*")) {
                     if (currentStep.length() > 0) {
                         steps.add(currentStep.toString().trim());
                         currentStep.setLength(0);
                     }
-                    // Remove the "1. " prefix and add the rest
                     currentStep.append(cleanLine.replaceAll("^\\d+[\\.\\)]\\s*", ""));
                 } else {
-                    // Append to current step if it's a continuation line
                     if (currentStep.length() > 0) currentStep.append(" ");
                     currentStep.append(cleanLine);
                 }

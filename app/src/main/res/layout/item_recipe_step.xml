@@ -1,25 +1,44 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:padding="8dp">
+    android:layout_marginBottom="16dp"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="3dp"
+    app:cardBackgroundColor="@android:color/white">
 
-    <TextView
-        android:id="@+id/stepNumber"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="4dp"
-        android:textSize="16sp"
-        android:textStyle="bold"
-        android:textColor="?android:attr/textColorPrimary" />
+        android:orientation="vertical"
+        android:padding="20dp">
 
-    <TextView
-        android:id="@+id/stepText"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
-        android:textSize="14sp"
-        android:textColor="?android:attr/textColorSecondary" />
+        <TextView
+            android:id="@+id/stepNumber"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Step 1"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:textColor="?attr/colorPrimary" />
 
-</LinearLayout>
+        <View
+            android:layout_width="40dp"
+            android:layout_height="2dp"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="12dp"
+            android:background="?attr/colorPrimary" />
+
+        <TextView
+            android:id="@+id/stepText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Step description"
+            android:textSize="16sp"
+            android:lineSpacingExtra="6sp"
+            android:textColor="#2C3E50" />
+
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

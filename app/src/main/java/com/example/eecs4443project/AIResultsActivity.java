@@ -66,7 +66,7 @@ public class AIResultsActivity extends AppCompatActivity {
                     public void onSuccess(GenerateContentResponse result) {
                         generatedResponse = result.getText();
                         Log.d(TAG, "AI Success. Response length: " + (generatedResponse != null ? generatedResponse.length() : 0));
-                        
+
                         runOnUiThread(() -> {
                             progressBar.setVisibility(View.GONE);
                             statusText.setVisibility(View.GONE);
@@ -97,7 +97,7 @@ public class AIResultsActivity extends AppCompatActivity {
 
             String title = "New Recipe";
             String[] lines = trimmedSection.split("\n");
-            
+
             for (String line : lines) {
                 String cleanLine = line.trim().replaceAll("[\\*#]", "");
                 if (cleanLine.toLowerCase().contains("title:")) {
@@ -105,7 +105,7 @@ public class AIResultsActivity extends AppCompatActivity {
                     break;
                 }
             }
-            
+
             if (title.equals("New Recipe") && lines.length > 0) {
                 for(String line : lines) {
                     if (!line.trim().isEmpty()) {
@@ -121,7 +121,7 @@ public class AIResultsActivity extends AppCompatActivity {
 
     private void addRecipeCard(String title, String fullText) {
         View cardView = LayoutInflater.from(this).inflate(R.layout.item_recipe_card, recipeListContainer, false);
-        
+
         TextView titleText = cardView.findViewById(R.id.recipeTitle);
         titleText.setText(title);
 
