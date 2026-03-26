@@ -3,189 +3,208 @@ package com.example.eecs4443project;
 import android.annotation.SuppressLint;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.ScaleGestureDetector;
+import android.view.View;
 import android.widget.Button;
 import android.widget.SeekBar;
 import android.widget.TextView;
-
 import androidx.activity.EdgeToEdge;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
-
+import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.PagerSnapHelper;
+import androidx.recyclerview.widget.RecyclerView;
 import java.util.ArrayList;
 import java.util.List;
 
 public class RecipeStepSwipeActivity extends AppCompatActivity {
-    private static final String TAG = "RecipeStepSwipe";
 
-    private int currentStep = 0;
-    private TextView stepIndicator;
-    private TextView stepContent;
-    private Button prevButton;
-    private Button nextButton;
+    private RecyclerView recyclerView;
+    private RecipeAdapter adapter;
     private SeekBar seekBar;
+    private TextView stepIndicator;
+    private Button prevButton, nextButton;
     private List<String> steps = new ArrayList<>();
 
-    @SuppressLint("MissingInflatedId")
+    private LinearLayoutManager linearLayoutManager;
+    private GridLayoutManager gridLayoutManager;
+    private PagerSnapHelper snapHelper;
+    private boolean isGridView = false;
+    private int handMode = 1;
+    private ScaleGestureDetector scaleGestureDetector;
+
+    @SuppressLint({"ClickableViewAccessibility", "MissingInflatedId"})
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_recipe_step_swipe);
+
+        handMode = getIntent().getIntExtra("handMode", 1);
+
+        recyclerView = findViewById(R.id.recipeRecyclerView);
+        stepIndicator = findViewById(R.id.stepIndicator);
+        prevButton = findViewById(R.id.prevButton);
+        nextButton = findViewById(R.id.nextButton);
+        seekBar = findViewById(R.id.seekBar);
+
+        linearLayoutManager = new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false);
+        gridLayoutManager = new GridLayoutManager(this, 3);
+        snapHelper = new PagerSnapHelper();
+
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
 
-        stepIndicator = findViewById(R.id.stepIndicator);
-        stepContent = findViewById(R.id.stepContent);
-        prevButton = findViewById(R.id.prevButton);
-        nextButton = findViewById(R.id.nextButton);
-        seekBar = findViewById(R.id.seekBar);
-
         String recipeText = getIntent().getStringExtra("recipe_text");
-        if (recipeText != null) {
-            String ingredients = parseIngredients(recipeText);
-            if (!ingredients.isEmpty()) {
-                steps.add("Ingredients with Amounts:\n\n" + ingredients);
+        processRecipeData(recipeText);
+
+        recyclerView.setLayoutManager(linearLayoutManager);
+        snapHelper.attachToRecyclerView(recyclerView);
+
+        adapter = new RecipeAdapter(steps, position -> {
+            if (isGridView) {
+                Log.d("RecipeInteraction", "Grid item clicked: " + position);
+                switchToSwipeAtPosition(position);
             }
-            steps.addAll(parseSteps(recipeText));
-        }
+        });
+        recyclerView.setAdapter(adapter);
 
-        if (steps.isEmpty()) {
-            steps.add("Follow the instructions provided in the recipe details.");
-        }
+        seekBar.setMax(steps.size() > 0 ? steps.size() - 1 : 0);
 
-        seekBar.setMax(steps.size() - 1);
-        updateStepDisplay();
+        recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
+                if (!isGridView) {
+                    View centerView = snapHelper.findSnapView(linearLayoutManager);
+                    if (centerView != null) {
+                        int pos = linearLayoutManager.getPosition(centerView);
+                        updateUI(pos);
+                    }
+                }
+            }
+        });
+
+        scaleGestureDetector = new ScaleGestureDetector(this, new ScaleGestureDetector.SimpleOnScaleGestureListener() {
+            @Override
+            public boolean onScale(@NonNull ScaleGestureDetector detector) {
+                // Pinch-in detected (scaleFactor < 1)
+                if (handMode == 2 && !isGridView && detector.getScaleFactor() < 0.8f) {
+                    switchToGrid();
+                    return true;
+                }
+                return false;
+            }
+        });
+
+        recyclerView.setOnTouchListener((v, event) -> {
+            scaleGestureDetector.onTouchEvent(event);
+            return false;
+        });
 
         prevButton.setOnClickListener(v -> {
-            if (currentStep > 0) {
-                currentStep--;
-                updateStepDisplay();
-            }
+            int current = linearLayoutManager.findFirstVisibleItemPosition();
+            if (current > 0) recyclerView.smoothScrollToPosition(current - 1);
         });
 
         nextButton.setOnClickListener(v -> {
-            if (currentStep < steps.size() - 1) {
-                currentStep++;
-                updateStepDisplay();
-            }
+            int current = linearLayoutManager.findFirstVisibleItemPosition();
+            if (current < steps.size() - 1) recyclerView.smoothScrollToPosition(current + 1);
         });
 
-        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                if (fromUser) {
-                    currentStep = progress;
-                    updateStepDisplay();
-                }
-            }
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {}
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {}
+        updateUI(0);
+    }
+
+    private void switchToSwipeAtPosition(int position) {
+        if (!isGridView) return;
+        isGridView = false;
+        Log.d("RecipeInteraction", "Switching to Swipe at " + position);
+
+        recyclerView.setLayoutManager(linearLayoutManager);
+        try {
+            snapHelper.attachToRecyclerView(null);
+            snapHelper.attachToRecyclerView(recyclerView);
+        } catch (Exception e) {
+            Log.e("RecipeInteraction", "Error attaching SnapHelper", e);
+        }
+
+        adapter.setGridMode(false);
+        adapter.notifyDataSetChanged();
+        
+        recyclerView.post(() -> {
+            recyclerView.scrollToPosition(position);
+            updateUI(position);
         });
     }
 
-    private void updateStepDisplay() {
-        if (currentStep == 0 && steps.get(0).startsWith("Ingredients")) {
-            stepIndicator.setText("Ingredients");
+    private void switchToGrid() {
+        if (isGridView) return;
+        isGridView = true;
+        Log.d("RecipeInteraction", "Switching to Grid");
+        
+        try {
+            snapHelper.attachToRecyclerView(null);
+        } catch (Exception e) {
+            Log.e("RecipeInteraction", "Error detaching SnapHelper", e);
+        }
+        
+        recyclerView.setLayoutManager(gridLayoutManager);
+        adapter.setGridMode(true);
+        adapter.notifyDataSetChanged();
+    }
+
+    private void processRecipeData(String rawText) {
+        if (rawText == null) return;
+        List<String> instructionSteps = parseSteps(rawText);
+        steps.clear();
+        steps.addAll(instructionSteps);
+        if (steps.isEmpty()) {
+            steps.add(rawText);
+        }
+    }
+
+    private void updateUI(int position) {
+        if (position < 0 || position >= steps.size()) return;
+        stepIndicator.setText("Step " + (position + 1));
+        seekBar.setProgress(position);
+        prevButton.setEnabled(position > 0);
+        nextButton.setEnabled(position < steps.size() - 1);
+        if (position == steps.size() - 1) {
+            nextButton.setText("Finish");
         } else {
-            int stepNum = steps.get(0).startsWith("Ingredients") ? currentStep : currentStep + 1;
-            stepIndicator.setText("Step " + stepNum);
+            nextButton.setText("Next");
         }
-        stepContent.setText(steps.get(currentStep));
-        prevButton.setEnabled(currentStep > 0);
-        nextButton.setEnabled(currentStep < steps.size() - 1);
-        seekBar.setProgress(currentStep);
-    }
-
-    private String parseIngredients(String text) {
-        String[] lines = text.split("\n");
-        StringBuilder ingredientsBuilder = new StringBuilder();
-        boolean inIngredients = false;
-
-        for (String line : lines) {
-            String cleanLine = line.trim().replaceAll("[\\*#]", "");
-            String lowerLine = cleanLine.toLowerCase();
-
-            if (lowerLine.contains("ingredients")) {
-                inIngredients = true;
-                int colonIdx = cleanLine.indexOf(":");
-                if (colonIdx != -1 && colonIdx < cleanLine.length() - 1) {
-                    String restOfLine = cleanLine.substring(colonIdx + 1).trim();
-                    if (!restOfLine.isEmpty()) {
-                        ingredientsBuilder.append("• ").append(restOfLine).append("\n");
-                    }
-                }
-                continue;
-            }
-
-            if (lowerLine.contains("instructions") || lowerLine.contains("steps") || lowerLine.contains("directions")) {
-                inIngredients = false;
-                continue;
-            }
-
-            if (inIngredients && !cleanLine.isEmpty()) {
-                if (!cleanLine.startsWith("•") && !cleanLine.startsWith("-")) {
-                    ingredientsBuilder.append("• ").append(cleanLine).append("\n");
-                } else {
-                    ingredientsBuilder.append(cleanLine).append("\n");
-                }
-            }
-        }
-        return ingredientsBuilder.toString().trim();
     }
 
     private List<String> parseSteps(String text) {
-        List<String> stepsList = new ArrayList<>();
+        List<String> list = new ArrayList<>();
         String[] lines = text.split("\n");
         boolean inInstructions = false;
-        StringBuilder currentStepBuilder = new StringBuilder();
-
+        StringBuilder currentStep = new StringBuilder();
         for (String line : lines) {
             String cleanLine = line.trim().replaceAll("[\\*#]", "");
-            String lowerLine = cleanLine.toLowerCase();
-
-            if (lowerLine.contains("instructions") || lowerLine.contains("steps") || lowerLine.contains("directions")) {
+            String lower = cleanLine.toLowerCase();
+            if (lower.contains("instructions:") || lower.contains("steps:") || lower.contains("directions:")) {
                 inInstructions = true;
-                int colonIdx = cleanLine.indexOf(":");
-                if (colonIdx != -1 && colonIdx < cleanLine.length() - 1) {
-                    String restOfLine = cleanLine.substring(colonIdx + 1).trim();
-                    if (!restOfLine.isEmpty()) currentStepBuilder.append(restOfLine);
-                }
                 continue;
             }
-
-            if (inInstructions && (lowerLine.contains("ingredients") || lowerLine.contains("notes") || lowerLine.contains("prep time"))) {
-                if (currentStepBuilder.length() > 0) {
-                    stepsList.add(currentStepBuilder.toString().trim());
-                    currentStepBuilder.setLength(0);
-                }
-                inInstructions = false;
-                continue;
-            }
-
             if (inInstructions && !cleanLine.isEmpty()) {
                 if (cleanLine.matches("^\\d+[\\.\\)].*")) {
-                    if (currentStepBuilder.length() > 0) {
-                        stepsList.add(currentStepBuilder.toString().trim());
-                        currentStepBuilder.setLength(0);
-                    }
-                    currentStepBuilder.append(cleanLine.replaceAll("^\\d+[\\.\\)]\\s*", ""));
+                    if (currentStep.length() > 0) list.add(currentStep.toString().trim());
+                    currentStep = new StringBuilder(cleanLine.replaceAll("^\\d+[\\.\\)]\\s*", ""));
                 } else {
-                    if (currentStepBuilder.length() > 0) currentStepBuilder.append(" ");
-                    currentStepBuilder.append(cleanLine);
+                    if (currentStep.length() > 0) currentStep.append(" ");
+                    currentStep.append(cleanLine);
                 }
             }
         }
-
-        if (currentStepBuilder.length() > 0) {
-            stepsList.add(currentStepBuilder.toString().trim());
-        }
-        return stepsList;
+        if (currentStep.length() > 0) list.add(currentStep.toString().trim());
+        return list;
     }
 }

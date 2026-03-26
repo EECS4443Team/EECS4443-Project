@@ -59,9 +59,20 @@ public class RecipeDetailActivity extends AppCompatActivity {
             } else {
                 intent = new Intent(this, RecipeStepScrollActivity.class);
             }
+            MaterialButtonToggleGroup handToggle = findViewById(R.id.handToggle);
+            int selectedHandId = handToggle.getCheckedButtonId();
+            if (selectedHandId == R.id.toggleOneHande) {
+                intent.putExtra("handMode", 1);
+            } else if (selectedHandId == R.id.toggleTwoHande) {
+                intent.putExtra("handMode", 2);
+            } else {
+                // Default fallback if nothing is checked
+                intent.putExtra("handMode", 1);
+            }
             intent.putExtra("recipe_text", recipeText);
             startActivity(intent);
         });
+
 
         saveRecipeButton.setOnClickListener(v -> {
             if (recipeText != null) {
