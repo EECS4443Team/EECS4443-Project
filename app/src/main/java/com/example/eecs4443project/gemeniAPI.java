@@ -18,10 +18,8 @@ public class gemeniAPI {
 
         // 1. Configure the model settings
         GenerationConfig.Builder configBuilder = new GenerationConfig.Builder();
-        configBuilder.temperature = 0.8f; // Lowered slightly to improve consistency
+        configBuilder.temperature = 0.7f; // Lowered slightly to improve relevance
         configBuilder.topP = 0.95f;
-        // The Java SDK might have internal limits or the model might struggle with 8192
-        // Trying a slightly lower but still large limit that is more standard
         configBuilder.maxOutputTokens = 4096; 
         GenerationConfig config = configBuilder.build();
 
@@ -31,8 +29,10 @@ public class gemeniAPI {
 
         // 3. Build the prompt for 10 recipes
         StringBuilder promptBuilder = new StringBuilder();
-        // Added "BRIEF" and "CONCISE" to reduce token usage per recipe
-        promptBuilder.append("Create EXACTLY 10 different, BRIEF and CONCISE recipes using these ingredients: ").append(ingredients).append(". ");
+        
+        promptBuilder.append("Create EXACTLY 10 different, BRIEF and CONCISE recipes. ")
+                     .append("The recipes MUST be strictly based on these ingredients: ").append(ingredients).append(". ")
+                     .append("Do NOT suggest recipes that rely on main ingredients not listed above. ");
 
         if (isVegetarian) {
             promptBuilder.append("All recipes MUST be vegetarian. ");
@@ -41,8 +41,6 @@ public class gemeniAPI {
             promptBuilder.append("All recipes MUST be spicy. ");
         }
 
-        // Asking for concise steps to fit more recipes in the token limit
-        // Updated to explicitly ask for measurements in brackets
         promptBuilder.append("For EACH recipe, follow this exact structure:\n")
                      .append("Title: [Name]\n")
                      .append("Prep Time: [Time]\n")
