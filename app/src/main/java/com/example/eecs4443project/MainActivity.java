@@ -66,20 +66,25 @@ public class MainActivity extends AppCompatActivity {
 
         searchButton.setOnClickListener(v -> {
             final String[] selectedRecipeUrl = {""};
-            StringBuilder queryBuilder = new StringBuilder(searchInput.getText().toString().trim());
+            String searchText = searchInput.getText().toString().trim();
+            StringBuilder queryBuilder = new StringBuilder();
+
+            if (!searchText.isEmpty()) {
+                queryBuilder.append(searchText);
+            }
+
             JSONArray selectedIngredients = new JSONArray();
             for (CheckBox checkBox : checkBoxList) {
                 if (checkBox.isChecked()) {
-                    Log.d("Recipe", "Selected ingredient: " + checkBox.getText().toString());
-                    selectedIngredients.put(checkBox.getText().toString());
-                }
-            }
-            if (!searchInput.getText().toString().isEmpty())
-                queryBuilder.append(searchInput.getText().toString()).append(", ");
+                    String ingredient = checkBox.getText().toString();
+                    Log.d("Recipe", "Selected ingredient: " + ingredient);
+                    selectedIngredients.put(ingredient);
 
-            for (String ingredient : INGREDIENTS) {
-                if (queryBuilder.length() > 0) queryBuilder.append(", ");
-                queryBuilder.append(ingredient);
+                    if (queryBuilder.length() > 0) {
+                        queryBuilder.append(", ");
+                    }
+                    queryBuilder.append(ingredient);
+                }
             }
 
             boolean isAI = acquisitionToggle.getCheckedButtonId() == R.id.toggleAI;
