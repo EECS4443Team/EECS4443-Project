@@ -11,6 +11,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 import androidx.core.content.ContextCompat;
@@ -24,6 +25,7 @@ import com.google.common.util.concurrent.Futures;
 
 public class AIResultsActivity extends AppCompatActivity {
     private static final String TAG = "AIResultsActivity";
+    private static final String STATE_RESPONSE = "generated_response";
 
     private ProgressBar progressBar;
     private TextView statusText;
@@ -46,11 +48,24 @@ public class AIResultsActivity extends AppCompatActivity {
         statusText = findViewById(R.id.statusText);
         recipeListContainer = findViewById(R.id.recipeListContainer);
 
-        String query = getIntent().getStringExtra("query");
-        boolean isSpicy = getIntent().getBooleanExtra("spicy", false);
-        boolean isVegetarian = getIntent().getBooleanExtra("vegetarian", false);
+        if (savedInstanceState != null) {
+            generatedResponse = savedInstanceState.getString(STATE_RESPONSE, "");
+        }
 
-        fetchRecipe(query, isSpicy, isVegetarian);
+        if (!generatedResponse.isEmpty()) {
+            parseAndDisplayRecipes(generatedResponse);
+        } else {
+            String query = getIntent().getStringExtra("query");
+            boolean isSpicy = getIntent().getBooleanExtra("spicy", false);
+            boolean isVegetarian = getIntent().getBooleanExtra("vegetarian", false);
+            fetchRecipe(query, isSpicy, isVegetarian);
+        }
+    }
+
+    @Override
+    protected void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putString(STATE_RESPONSE, generatedResponse);
     }
 
     private void fetchRecipe(String ingredients, boolean isSpicy, boolean isVegetarian) {
@@ -88,6 +103,7 @@ public class AIResultsActivity extends AppCompatActivity {
 
     private void parseAndDisplayRecipes(String response) {
         if (response == null) return;
+        recipeListContainer.removeAllViews();
 
         String[] recipeSections = response.split("---");
 
