@@ -46,7 +46,8 @@
     <string name="topButton">TopButton</string>
     <string name="bottombutton">BottomButton</string>
     <string name="toggle_one_hand_mode">One-Hand</string>
-    <string name="toggle_two_hand_mode">two-Hand</string>
+    <string name="toggle_two_hand_mode">Two-Hand</string>
+    <string name="save_recipe_button">Save Recipe</string>
 
     <string-array name="recipe_categories">
         <item>All</item>
