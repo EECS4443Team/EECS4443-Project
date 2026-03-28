@@ -81,7 +81,7 @@ public class HtmlParser {
      * Returns the parsed data as a Recipe object.
      */
     public Recipe getRecipe() {
-        return new Recipe(this.title, this.imageUrl, this.ingredientsList, this.instructionsList);
+        return new Recipe(this.title, this.ingredientsList, this.instructionsList);
     }
 
     @NonNull

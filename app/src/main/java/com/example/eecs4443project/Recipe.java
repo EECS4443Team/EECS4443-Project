@@ -27,7 +27,7 @@ public class Recipe implements Serializable {
     /**
      * Creates a Recipe from website data (with an image URL).
      */
-    public Recipe(String title, String imageUrl, List<String> ingredients, List<String> instructions) {
+    public Recipe(String title, List<String> ingredients, List<String> instructions) {
         this.id = 0;
         this.title = title;
         this.ingredients = (ingredients != null) ? ingredients : new ArrayList<>();
