@@ -2,6 +2,7 @@ package com.example.eecs4443project;
 
 import android.util.Log;
 
+import androidx.annotation.NonNull;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
@@ -55,7 +56,7 @@ public class AIResultsViewModel extends ViewModel {
 
         Futures.addCallback(
                 GeminiApiHelper.generateRecipes(ingredients, isSpicy, isVegetarian),
-                new FutureCallback<GenerateContentResponse>() {
+                new FutureCallback<>() {
                     @Override
                     public void onSuccess(GenerateContentResponse result) {
                         savedAiResponse = result.getText();
@@ -83,7 +84,7 @@ public class AIResultsViewModel extends ViewModel {
                     }
 
                     @Override
-                    public void onFailure(Throwable error) {
+                    public void onFailure(@NonNull Throwable error) {
                         Log.e(TAG, "AI request failed: " + error.getMessage());
                         errorMessage.postValue("Error: " + error.getMessage());
                         isLoading.postValue(false);

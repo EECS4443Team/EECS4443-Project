@@ -17,15 +17,12 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.lifecycle.ViewModelProvider;
 
-import java.util.List;
-
 public class RecipeStepScrollActivity extends AppCompatActivity {
     private LinearLayout stepsContainer;
     private float currentTextSize = 16f;
     private final float MIN_TEXT_SIZE = 10f;
     private final float MAX_TEXT_SIZE = 40f;
     private ScaleGestureDetector scaleGestureDetector;
-    private int handMode = 1;
 
     @SuppressLint("ClickableViewAccessibility")
     @Override
@@ -34,7 +31,7 @@ public class RecipeStepScrollActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_recipe_step_scroll);
 
-        handMode = getIntent().getIntExtra("handMode", 1);
+        int handMode = getIntent().getIntExtra("handMode", 1);
 
         View mainView = findViewById(R.id.main);
         if (mainView != null) {
@@ -46,7 +43,7 @@ public class RecipeStepScrollActivity extends AppCompatActivity {
         }
 
         TextView stepTitle = findViewById(R.id.stepTitle);
-        stepTitle.setText("Cooking Instructions");
+        stepTitle.setText(R.string.cooking_instructions_title);
 
         stepsContainer = findViewById(R.id.stepsContainer);
         stepsContainer.removeAllViews();
@@ -119,7 +116,7 @@ public class RecipeStepScrollActivity extends AppCompatActivity {
         TextView titleView = ingredientsView.findViewById(R.id.stepNumber);
         TextView contentView = ingredientsView.findViewById(R.id.stepText);
 
-        titleView.setText("Ingredients with Amounts");
+        titleView.setText(R.string.ingredients_with_amounts_title);
         contentView.setText(ingredients);
 
         container.addView(ingredientsView);
@@ -130,7 +127,7 @@ public class RecipeStepScrollActivity extends AppCompatActivity {
         TextView stepNumberView = stepView.findViewById(R.id.stepNumber);
         TextView stepTextView = stepView.findViewById(R.id.stepText);
 
-        stepNumberView.setText("Step " + number);
+        stepNumberView.setText(getString(R.string.step_format, number));
         stepTextView.setText(text);
 
         container.addView(stepView);

@@ -9,11 +9,11 @@ import java.util.List;
  * Used when parsing recipes from websites (HtmlParser) and when loading from the database.
  */
 public class Recipe implements Serializable {
-    private long id;
-    private String title;
-    private String imageUrl;
-    private List<String> ingredients;
-    private List<String> instructions;
+    private final long id;
+    private final String title;
+    private final String imageUrl;
+    private final List<String> ingredients;
+    private final List<String> instructions;
 
     /**
      * Creates a Recipe from database data (with an ID).
@@ -21,6 +21,7 @@ public class Recipe implements Serializable {
     public Recipe(long id, String title, List<String> ingredients, List<String> instructions) {
         this.id = id;
         this.title = title;
+        this.imageUrl = null;
         this.ingredients = (ingredients != null) ? ingredients : new ArrayList<>();
         this.instructions = (instructions != null) ? instructions : new ArrayList<>();
     }
@@ -29,6 +30,7 @@ public class Recipe implements Serializable {
      * Creates a Recipe from website data (with an image URL).
      */
     public Recipe(String title, String imageUrl, List<String> ingredients, List<String> instructions) {
+        this.id = 0;
         this.title = title;
         this.imageUrl = imageUrl;
         this.ingredients = (ingredients != null) ? ingredients : new ArrayList<>();
@@ -43,10 +45,6 @@ public class Recipe implements Serializable {
 
     public String getTitle() {
         return title;
-    }
-
-    public String getImageUrl() {
-        return imageUrl;
     }
 
     public List<String> getIngredients() {

@@ -32,7 +32,7 @@ public class RecipeStepSwipeActivity extends AppCompatActivity {
     private SeekBar seekBar;
     private TextView stepIndicator;
     private Button prevButton, nextButton;
-    private List<String> steps = new ArrayList<>();
+    private final List<String> steps = new ArrayList<>();
 
     private LinearLayoutManager linearLayoutManager;
     private GridLayoutManager gridLayoutManager;
@@ -41,7 +41,7 @@ public class RecipeStepSwipeActivity extends AppCompatActivity {
     private int handMode = 1;
     private ScaleGestureDetector scaleGestureDetector;
 
-    @SuppressLint({"ClickableViewAccessibility", "MissingInflatedId"})
+    @SuppressLint({"ClickableViewAccessibility", "MissingInflatedId", "NotifyDataSetChanged"})
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -86,7 +86,7 @@ public class RecipeStepSwipeActivity extends AppCompatActivity {
             steps.clear();
             steps.addAll(newSteps);
             adapter.notifyDataSetChanged();
-            seekBar.setMax(steps.size() > 0 ? steps.size() - 1 : 0);
+            seekBar.setMax(!steps.isEmpty() ? steps.size() - 1 : 0);
             updateUI(0);
         });
 
@@ -148,6 +148,7 @@ public class RecipeStepSwipeActivity extends AppCompatActivity {
         return Math.max(3, count);
     }
 
+    @SuppressLint("NotifyDataSetChanged")
     private void switchToSwipeAtPosition(int position) {
         if (!isGridView) return;
         isGridView = false;
@@ -170,6 +171,7 @@ public class RecipeStepSwipeActivity extends AppCompatActivity {
         });
     }
 
+    @SuppressLint("NotifyDataSetChanged")
     private void switchToGrid() {
         if (isGridView) return;
         isGridView = true;
@@ -188,16 +190,16 @@ public class RecipeStepSwipeActivity extends AppCompatActivity {
 
     private void updateUI(int position) {
         if (position < 0 || position >= steps.size()) return;
-        stepIndicator.setText("Step " + (position + 1));
+        stepIndicator.setText(getString(R.string.step_format, position + 1));
         seekBar.setProgress(position);
         prevButton.setEnabled(position > 0);
 
         nextButton.setEnabled(true);
 
         if (position == steps.size() - 1) {
-            nextButton.setText("Finish");
+            nextButton.setText(R.string.button_finish);
         } else {
-            nextButton.setText("Next");
+            nextButton.setText(R.string.button_next);
         }
     }
 }

@@ -1,5 +1,6 @@
 package com.example.eecs4443project;
 
+import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.graphics.Canvas;
@@ -34,6 +35,7 @@ public class SavedRecipesActivity extends AppCompatActivity {
     private SavedRecipesViewModel viewModel;
     private final List<SavedRecipe> adapterList = new ArrayList<>();
 
+    @SuppressLint("NotifyDataSetChanged")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -47,7 +49,7 @@ public class SavedRecipesActivity extends AppCompatActivity {
 
         TextView title = findViewById(R.id.resultsTitle);
         if (title != null) {
-            title.setText("Saved Recipes");
+            title.setText(R.string.saved_recipes_title);
             title.setGravity(Gravity.CENTER);
             title.getLayoutParams().width = ViewGroup.LayoutParams.MATCH_PARENT;
         }
@@ -106,23 +108,21 @@ public class SavedRecipesActivity extends AppCompatActivity {
 
             @Override
             public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
-                int position = viewHolder.getAdapterPosition();
+                int position = viewHolder.getBindingAdapterPosition();
                 SavedRecipe recipe = adapterList.get(position);
 
                 new AlertDialog.Builder(SavedRecipesActivity.this)
-                        .setTitle("Delete Recipe")
-                        .setMessage("Are you sure you want to delete \"" + recipe.getTitle() + "\"?")
-                        .setPositiveButton("Delete", (dialog, which) -> {
+                        .setTitle(R.string.delete_recipe_title)
+                        .setMessage(getString(R.string.delete_recipe_message, recipe.getTitle()))
+                        .setPositiveButton(R.string.button_delete, (dialog, which) -> {
                             viewModel.deleteRecipeFromDatabase(recipe.getTitle());
                             adapterList.remove(position);
                             adapter.notifyItemRemoved(position);
                         })
-                        .setNegativeButton("Cancel", (dialog, which) -> {
-                            adapter.notifyItemChanged(position);
-                        })
-                        .setOnCancelListener(dialog -> {
-                            adapter.notifyItemChanged(position);
-                        })
+                        .setNegativeButton(R.string.button_cancel, (dialog, which) ->
+                                adapter.notifyItemChanged(position))
+                        .setOnCancelListener(dialog ->
+                                adapter.notifyItemChanged(position))
                         .show();
             }
         }).attachToRecyclerView(recyclerView);

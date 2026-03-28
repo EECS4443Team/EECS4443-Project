@@ -95,10 +95,8 @@ public class RecipeDatabaseHelper extends SQLiteOpenHelper {
                 null, null, null
         );
 
-        boolean exists = (cursor != null && cursor.getCount() > 0);
-        if (cursor != null) {
-            cursor.close();
-        }
+        boolean exists = cursor.getCount() > 0;
+        cursor.close();
         return exists;
     }
 

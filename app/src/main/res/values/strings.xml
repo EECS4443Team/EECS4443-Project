@@ -49,6 +49,16 @@
     <string name="toggle_two_hand_mode">Two-Hand</string>
     <string name="save_recipe_button">Save Recipe</string>
     <string name="saved_recipe_button">Saved</string>
+    <string name="saved_recipes_title">Saved Recipes</string>
+    <string name="cooking_instructions_title">Cooking Instructions</string>
+    <string name="ingredients_with_amounts_title">Ingredients with Amounts</string>
+    <string name="ai_loading_message">Gemini is cooking up your 10 recipes…</string>
+    <string name="no_results_found">No results found.</string>
+    <string name="button_finish">Finish</string>
+    <string name="delete_recipe_title">Delete Recipe</string>
+    <string name="delete_recipe_message">Are you sure you want to delete \"%s\"?</string>
+    <string name="button_delete">Delete</string>
+    <string name="button_cancel">Cancel</string>
 
     <string-array name="recipe_categories">
         <item>All</item>

@@ -44,7 +44,7 @@ public class RecipeParser {
     // -----------------------------------------------------------------------
 
     private static String removeMarkdownMarkers(String line) {
-        return line.trim().replaceAll("[\\*#]", "");
+        return line.trim().replaceAll("[*#]", "");
     }
 
     // -----------------------------------------------------------------------
@@ -298,7 +298,7 @@ public class RecipeParser {
 
             // Process instruction lines
             if (insideInstructionsSection && !cleanLine.isEmpty()) {
-                boolean startsWithNumber = cleanLine.matches("^\\d+[\\.\\)].*");
+                boolean startsWithNumber = cleanLine.matches("^\\d+[.)].*");
 
                 if (startsWithNumber) {
                     // Save the previous step and start a new one
@@ -307,7 +307,7 @@ public class RecipeParser {
                         currentStep.setLength(0);
                     }
                     // Remove the number prefix (e.g., "1. " or "2) ")
-                    String stepText = cleanLine.replaceAll("^\\d+[\\.\\)]\\s*", "");
+                    String stepText = cleanLine.replaceAll("^\\d+[.)]\\s*", "");
                     currentStep.append(stepText);
                 } else {
                     // Continue the current step (multi-line step text)
@@ -342,7 +342,7 @@ public class RecipeParser {
 
         // Strategy 2: If that didn't work, try splitting by "Recipe #" headers
         if (rawSections.length <= 1) {
-            rawSections = response.split("(?=(?:Recipe\\s*#|\\*\\*Recipe\\s*#))");
+            rawSections = response.split("(?=\\*{0,2}Recipe\\s*#)");
         }
 
         // Strategy 3: Try splitting by "Title:" appearing at the start of a line

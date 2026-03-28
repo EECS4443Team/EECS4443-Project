@@ -29,7 +29,7 @@ public class HtmlParser {
     private String url;
     private String title;
     private String imageUrl;
-    private List<String> ingredientsList = new ArrayList<>();
+    private final List<String> ingredientsList = new ArrayList<>();
     private final List<String> instructionsList = new ArrayList<>();
 
     /**

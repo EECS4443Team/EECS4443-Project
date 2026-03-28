@@ -86,7 +86,7 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.StepViewHo
     /**
      * ViewHolder that holds references to the views in each step item.
      */
-    static class StepViewHolder extends RecyclerView.ViewHolder {
+    public static class StepViewHolder extends RecyclerView.ViewHolder {
         TextView stepContentText;
         TextView stepNumberText;  // Only exists in the grid layout
         View clickOverlay;

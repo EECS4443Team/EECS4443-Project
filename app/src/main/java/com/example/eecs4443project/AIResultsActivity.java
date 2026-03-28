@@ -22,7 +22,6 @@ public class AIResultsActivity extends AppCompatActivity {
     private ProgressBar progressBar;
     private TextView statusText;
     private LinearLayout recipeListContainer;
-    private AIResultsViewModel viewModel;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,14 +39,14 @@ public class AIResultsActivity extends AppCompatActivity {
         statusText = findViewById(R.id.statusText);
         recipeListContainer = findViewById(R.id.recipeListContainer);
 
-        viewModel = new ViewModelProvider(this).get(AIResultsViewModel.class);
+        AIResultsViewModel viewModel = new ViewModelProvider(this).get(AIResultsViewModel.class);
 
         // Observe loading state
         viewModel.getIsLoading().observe(this, loading -> {
             if (loading) {
                 progressBar.setVisibility(View.VISIBLE);
                 statusText.setVisibility(View.VISIBLE);
-                statusText.setText("Gemini is cooking up your 10 recipes...");
+                statusText.setText(R.string.ai_loading_message);
                 recipeListContainer.removeAllViews();
             } else {
                 progressBar.setVisibility(View.GONE);
@@ -69,7 +68,7 @@ public class AIResultsActivity extends AppCompatActivity {
             recipeListContainer.removeAllViews();
             if (sections.isEmpty()) {
                 statusText.setVisibility(View.VISIBLE);
-                statusText.setText("No results found.");
+                statusText.setText(R.string.no_results_found);
             } else {
                 for (RecipeParser.RecipeSection section : sections) {
                     addRecipeCard(section.title, section.fullText);
