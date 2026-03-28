@@ -8,29 +8,21 @@ import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.cardview.widget.CardView;
-import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
-
-import com.google.ai.client.generativeai.type.GenerateContentResponse;
-import com.google.common.util.concurrent.FutureCallback;
-import com.google.common.util.concurrent.Futures;
+import androidx.lifecycle.ViewModelProvider;
 
 public class AIResultsActivity extends AppCompatActivity {
     private static final String TAG = "AIResultsActivity";
-    private static final String STATE_RESPONSE = "generated_response";
 
     private ProgressBar progressBar;
     private TextView statusText;
     private LinearLayout recipeListContainer;
-    private String generatedResponse = "";
+    private AIResultsViewModel viewModel;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,91 +40,48 @@ public class AIResultsActivity extends AppCompatActivity {
         statusText = findViewById(R.id.statusText);
         recipeListContainer = findViewById(R.id.recipeListContainer);
 
-        if (savedInstanceState != null) {
-            generatedResponse = savedInstanceState.getString(STATE_RESPONSE, "");
-        }
+        viewModel = new ViewModelProvider(this).get(AIResultsViewModel.class);
 
-        if (!generatedResponse.isEmpty()) {
-            parseAndDisplayRecipes(generatedResponse);
-        } else {
-            String query = getIntent().getStringExtra("query");
-            boolean isSpicy = getIntent().getBooleanExtra("spicy", false);
-            boolean isVegetarian = getIntent().getBooleanExtra("vegetarian", false);
-            fetchRecipe(query, isSpicy, isVegetarian);
-        }
-    }
+        // Observe loading state
+        viewModel.getIsLoading().observe(this, loading -> {
+            if (loading) {
+                progressBar.setVisibility(View.VISIBLE);
+                statusText.setVisibility(View.VISIBLE);
+                statusText.setText("Gemini is cooking up your 10 recipes...");
+                recipeListContainer.removeAllViews();
+            } else {
+                progressBar.setVisibility(View.GONE);
+                statusText.setVisibility(View.GONE);
+            }
+        });
 
-    @Override
-    protected void onSaveInstanceState(@NonNull Bundle outState) {
-        super.onSaveInstanceState(outState);
-        outState.putString(STATE_RESPONSE, generatedResponse);
-    }
+        // Observe error messages
+        viewModel.getErrorMessage().observe(this, error -> {
+            if (error != null) {
+                progressBar.setVisibility(View.GONE);
+                statusText.setVisibility(View.VISIBLE);
+                statusText.setText(error);
+            }
+        });
 
-    private void fetchRecipe(String ingredients, boolean isSpicy, boolean isVegetarian) {
-        progressBar.setVisibility(View.VISIBLE);
-        statusText.setVisibility(View.VISIBLE);
-        statusText.setText("Gemini is cooking up your 10 recipes...");
-        recipeListContainer.removeAllViews();
-
-        Futures.addCallback(
-                gemeniAPI.getRecipeFromAI(ingredients, isSpicy, isVegetarian),
-                new FutureCallback<GenerateContentResponse>() {
-                    @Override
-                    public void onSuccess(GenerateContentResponse result) {
-                        generatedResponse = result.getText();
-                        Log.d(TAG, "AI Success. Response length: " + (generatedResponse != null ? generatedResponse.length() : 0));
-
-                        runOnUiThread(() -> {
-                            progressBar.setVisibility(View.GONE);
-                            statusText.setVisibility(View.GONE);
-                            parseAndDisplayRecipes(generatedResponse);
-                        });
-                    }
-
-                    @Override
-                    public void onFailure(Throwable t) {
-                        runOnUiThread(() -> {
-                            progressBar.setVisibility(View.GONE);
-                            statusText.setText("Error: " + t.getMessage());
-                        });
-                    }
-                },
-                ContextCompat.getMainExecutor(this)
-        );
-    }
-
-    private void parseAndDisplayRecipes(String response) {
-        if (response == null) return;
-        recipeListContainer.removeAllViews();
-
-        String[] recipeSections = response.split("---");
-
-        for (String section : recipeSections) {
-            String trimmedSection = section.trim();
-            if (trimmedSection.length() < 10) continue;
-
-            String title = "New Recipe";
-            String[] lines = trimmedSection.split("\n");
-
-            for (String line : lines) {
-                String cleanLine = line.trim().replaceAll("[\\*#]", "");
-                if (cleanLine.toLowerCase().contains("title:")) {
-                    title = cleanLine.substring(cleanLine.toLowerCase().indexOf("title:") + 6).trim();
-                    break;
+        // Observe parsed recipe sections
+        viewModel.getRecipeSections().observe(this, sections -> {
+            recipeListContainer.removeAllViews();
+            if (sections.isEmpty()) {
+                statusText.setVisibility(View.VISIBLE);
+                statusText.setText("No results found.");
+            } else {
+                for (RecipeParser.RecipeSection section : sections) {
+                    addRecipeCard(section.title, section.fullText);
                 }
             }
+        });
 
-            if (title.equals("New Recipe") && lines.length > 0) {
-                for(String line : lines) {
-                    if (!line.trim().isEmpty()) {
-                        title = line.trim().replaceAll("[\\*#]", "");
-                        break;
-                    }
-                }
-            }
-
-            addRecipeCard(title, trimmedSection);
-        }
+        // Fetch recipes (ViewModel handles deduplication on rotation)
+        String query = getIntent().getStringExtra("query");
+        boolean isSpicy = getIntent().getBooleanExtra("spicy", false);
+        boolean isVegetarian = getIntent().getBooleanExtra("vegetarian", false);
+        viewModel.fetchRecipes(query, isSpicy, isVegetarian);
     }
 
     private void addRecipeCard(String title, String fullText) {
@@ -141,7 +90,6 @@ public class AIResultsActivity extends AppCompatActivity {
         TextView titleText = cardView.findViewById(R.id.recipeTitle);
         titleText.setText(title);
 
-        // Crucial: Set the click listener on the ID we added to the XML
         View clickableArea = cardView.findViewById(R.id.recipeCardContent);
         if (clickableArea != null) {
             clickableArea.setOnClickListener(v -> {

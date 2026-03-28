@@ -14,14 +14,13 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.lifecycle.ViewModelProvider;
 
 import com.google.android.material.button.MaterialButtonToggleGroup;
 
 public class RecipeDetailActivity extends AppCompatActivity {
     private static final String TAG = "RecipeDetailActivity";
-    private RecipeDatabaseHelper dbHelper;
-    private boolean isSaved = false;
-    private String parsedTitle = "AI Generated Recipe";
+    private RecipeDetailViewModel viewModel;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,7 +33,7 @@ public class RecipeDetailActivity extends AppCompatActivity {
             return insets;
         });
 
-        dbHelper = new RecipeDatabaseHelper(this);
+        viewModel = new ViewModelProvider(this).get(RecipeDetailViewModel.class);
 
         TextView recipeTitle = findViewById(R.id.recipeTitle);
         TextView recipeIngredients = findViewById(R.id.recipeIngredients);
@@ -45,23 +44,33 @@ public class RecipeDetailActivity extends AppCompatActivity {
         // Get the recipe data from Intent
         String mode = getIntent().getStringExtra("acquisition_mode");
         String recipeText = getIntent().getStringExtra("recipe_text");
+        boolean fromSaved = getIntent().getBooleanExtra("from_saved", false);
 
         Log.d(TAG, "Mode: " + mode);
         Log.d(TAG, "Recipe Text received: " + (recipeText != null ? "Yes" : "No"));
 
-        if (recipeText != null) {
-
-            parseAndDisplayRecipe(recipeText, recipeTitle, recipeIngredients);
-        }
+        // Observe ViewModel LiveData
+        viewModel.getRecipeTitle().observe(this, recipeTitle::setText);
+        viewModel.getRecipeIngredients().observe(this, recipeIngredients::setText);
 
         // Hide save button when viewing a saved recipe
-        boolean fromSaved = getIntent().getBooleanExtra("from_saved", false);
         if (fromSaved) {
             saveRecipeButton.setVisibility(View.GONE);
-        } else if (dbHelper.isRecipeSaved(parsedTitle)) {
-            isSaved = true;
-            saveRecipeButton.setText(R.string.saved_recipe_button);
-            styleSaveButton(saveRecipeButton, true);
+        } else {
+            viewModel.getIsSaved().observe(this, saved -> {
+                if (saved) {
+                    saveRecipeButton.setText(R.string.saved_recipe_button);
+                    styleSaveButton(saveRecipeButton, true);
+                } else {
+                    saveRecipeButton.setText(R.string.save_recipe_button);
+                    styleSaveButton(saveRecipeButton, false);
+                }
+            });
+        }
+
+        // Parse recipe text (ViewModel skips if already parsed after rotation)
+        if (recipeText != null) {
+            viewModel.parseAndDisplayRecipe(recipeText);
         }
 
         navToggle.check(R.id.toggleScroll);
@@ -88,23 +97,18 @@ public class RecipeDetailActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
-
         saveRecipeButton.setOnClickListener(v -> {
             if (recipeText == null) {
                 Toast.makeText(this, "No recipe data to save", Toast.LENGTH_SHORT).show();
                 return;
             }
-            if (isSaved) {
-                dbHelper.deleteRecipeByTitle(parsedTitle);
-                isSaved = false;
-                saveRecipeButton.setText(R.string.save_recipe_button);
-                styleSaveButton(saveRecipeButton, false);
-                Toast.makeText(this, "Recipe unsaved", Toast.LENGTH_SHORT).show();
+            viewModel.toggleSaveRecipe(recipeText);
+            // LiveData observer already updated the button; show appropriate toast
+            Boolean saved = viewModel.getIsSaved().getValue();
+            if (saved != null && saved) {
+                Toast.makeText(this, "Recipe saved successfully!", Toast.LENGTH_SHORT).show();
             } else {
-                saveRecipeToDatabase(recipeText);
-                isSaved = true;
-                saveRecipeButton.setText(R.string.saved_recipe_button);
-                styleSaveButton(saveRecipeButton, true);
+                Toast.makeText(this, "Recipe unsaved", Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -116,113 +120,6 @@ public class RecipeDetailActivity extends AppCompatActivity {
         } else {
             button.setBackgroundColor(Color.TRANSPARENT);
             button.setTextColor(Color.parseColor("#4A148C"));
-        }
-    }
-
-    private void saveRecipeToDatabase(String text) {
-        String title = "AI Generated Recipe";
-        StringBuilder ingredients = new StringBuilder();
-        StringBuilder instructions = new StringBuilder();
-        
-        String[] lines = text.split("\n");
-        boolean inIngredients = false;
-        boolean inInstructions = false;
-
-        for (String line : lines) {
-            String cleanLine = line.trim().replaceAll("[\\*#]", "");
-            String lowerLine = cleanLine.toLowerCase();
-
-            if (lowerLine.contains("title:")) {
-                title = cleanLine.substring(lowerLine.indexOf("title:") + 6).trim();
-            } else if (lowerLine.startsWith("recipe #")) {
-                int colonIndex = cleanLine.indexOf(":");
-                if (colonIndex != -1) {
-                    title = cleanLine.substring(colonIndex + 1).trim();
-                }
-            } else if (lowerLine.contains("ingredients:")) {
-                inIngredients = true;
-                inInstructions = false;
-                String restOfLine = cleanLine.substring(lowerLine.indexOf("ingredients:") + 12).trim();
-                if (!restOfLine.isEmpty()) {
-                    ingredients.append(restOfLine).append("\n");
-                }
-            } else if (lowerLine.contains("instructions:") || lowerLine.contains("steps:") || lowerLine.contains("directions:")) {
-                inIngredients = false;
-                inInstructions = true;
-                int colonIdx = lowerLine.indexOf("instructions:");
-                if (colonIdx == -1) colonIdx = lowerLine.indexOf("steps:");
-                if (colonIdx == -1) colonIdx = lowerLine.indexOf("directions:");
-                
-                String restOfLine = cleanLine.substring(cleanLine.indexOf(":") + 1).trim();
-                if (!restOfLine.isEmpty()) {
-                    instructions.append(restOfLine).append("\n");
-                }
-            } else if (inIngredients && !cleanLine.isEmpty()) {
-                ingredients.append(cleanLine).append("\n");
-            } else if (inInstructions && !cleanLine.isEmpty()) {
-                instructions.append(cleanLine).append("\n");
-            }
-        }
-
-        long id = dbHelper.saveRecipe(title, ingredients.toString().trim(), instructions.toString().trim());
-        if (id != -1) {
-            Toast.makeText(this, "Recipe saved successfully!", Toast.LENGTH_SHORT).show();
-        } else {
-            Toast.makeText(this, "Failed to save recipe", Toast.LENGTH_SHORT).show();
-        }
-    }
-    private void parseAndDisplayRecipe(String text, TextView titleView, TextView ingredientsView) {
-        String[] lines = text.split("\n");
-        String title  = "AI Generated Recipe";
-        StringBuilder ingredients = new StringBuilder();
-        
-        boolean inIngredients = false;
-
-        for (String line : lines) {
-            String cleanLine = line.trim().replaceAll("[\\*#]", "");
-            String lowerLine = cleanLine.toLowerCase();
-
-            // Skip preamble lines
-            if (lowerLine.contains("here are 10") || lowerLine.contains("brief and concise")) {
-                continue;
-            }
-
-            if (lowerLine.contains("title:")) {
-                title = cleanLine.substring(lowerLine.indexOf("title:") + 6).trim();
-            } else if (lowerLine.startsWith("recipe #")) {
-                int colonIndex = cleanLine.indexOf(":");
-                if (colonIndex != -1) {
-                    title = cleanLine.substring(colonIndex + 1).trim();
-                }
-            } else if (lowerLine.contains("ingredients:")) {
-                inIngredients = true;
-                String restOfLine = cleanLine.substring(lowerLine.indexOf("ingredients:") + 12).trim();
-                if (!restOfLine.isEmpty()) {
-                    ingredients.append("• ").append(restOfLine).append("\n");
-                }
-            } else if (lowerLine.contains("instructions:")) {
-                inIngredients = false;
-            } else if (inIngredients && !cleanLine.isEmpty()) {
-                if (!lowerLine.contains("prep time:") && !lowerLine.contains("recipe #")) {
-                    ingredients.append("• ").append(cleanLine).append("\n");
-                }
-            }
-        }
-
-        parsedTitle = title;
-        titleView.setText(title);
-        if (ingredients.length() > 0) {
-            ingredientsView.setText(ingredients.toString().trim());
-        } else {
-            // Fallback: clean the text but keep structure if parsing failed
-            StringBuilder fallback = new StringBuilder();
-            for (String line : lines) {
-                String clean = line.trim();
-                if (!clean.toLowerCase().contains("here are 10") && !clean.isEmpty()) {
-                    fallback.append(clean).append("\n");
-                }
-            }
-            ingredientsView.setText(fallback.toString().trim());
         }
     }
 }

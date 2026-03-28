@@ -10,25 +10,35 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.List;
 
-public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.ViewHolder> {
-    private List<String> steps;
-    private OnItemClickListener listener;
-    private boolean isGridMode = false;
+/**
+ * RecyclerView adapter for displaying recipe cooking steps.
+ * Supports two view modes:
+ * - Card mode: shows one step at a time in a large swipeable card
+ * - Grid mode: shows all steps in a compact grid overview
+ */
+public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.StepViewHolder> {
 
     private static final int VIEW_TYPE_CARD = 1;
     private static final int VIEW_TYPE_GRID = 2;
 
-    public interface OnItemClickListener {
-        void onItemClick(int position);
+    private final List<String> stepsList;
+    private final OnStepClickListener clickListener;
+    private boolean isGridMode = false;
+
+    /**
+     * Listener interface for when a step is clicked (used in grid mode).
+     */
+    public interface OnStepClickListener {
+        void onStepClicked(int position);
     }
 
-    public void setGridMode(boolean isGrid) {
-        this.isGridMode = isGrid;
+    public RecipeAdapter(List<String> stepsList, OnStepClickListener clickListener) {
+        this.stepsList = stepsList;
+        this.clickListener = clickListener;
     }
 
-    public RecipeAdapter(List<String> steps, OnItemClickListener listener) {
-        this.steps = steps;
-        this.listener = listener;
+    public void setGridMode(boolean gridMode) {
+        this.isGridMode = gridMode;
     }
 
     @Override
@@ -38,44 +48,56 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.ViewHolder
 
     @NonNull
     @Override
-    public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        int layoutId = (viewType == VIEW_TYPE_GRID) 
-                ? R.layout.item_recipe_step_grid 
-                : R.layout.item_recipe_step_card;
-        
+    public StepViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        int layoutId;
+        if (viewType == VIEW_TYPE_GRID) {
+            layoutId = R.layout.item_recipe_step_grid;
+        } else {
+            layoutId = R.layout.item_recipe_step_card;
+        }
+
         View view = LayoutInflater.from(parent.getContext()).inflate(layoutId, parent, false);
-        return new ViewHolder(view, viewType);
+        return new StepViewHolder(view, viewType);
     }
 
     @Override
-    public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        holder.tvStepContent.setText(steps.get(position));
-        
-        if (holder.tvStepNumber != null) {
-            holder.tvStepNumber.setText(String.valueOf(position + 1));
+    public void onBindViewHolder(@NonNull StepViewHolder holder, int position) {
+        // Set the step content text
+        holder.stepContentText.setText(stepsList.get(position));
+
+        // Set the step number (only present in grid layout)
+        if (holder.stepNumberText != null) {
+            holder.stepNumberText.setText(String.valueOf(position + 1));
         }
 
-        holder.clickOverlay.setOnClickListener(v -> {
-            if (listener != null) {
-                listener.onItemClick(position);
+        // Set the click listener for the overlay
+        holder.clickOverlay.setOnClickListener(view -> {
+            if (clickListener != null) {
+                clickListener.onStepClicked(position);
             }
         });
     }
 
     @Override
-    public int getItemCount() { return steps.size(); }
+    public int getItemCount() {
+        return stepsList.size();
+    }
 
-    static class ViewHolder extends RecyclerView.ViewHolder {
-        TextView tvStepContent;
-        TextView tvStepNumber; // Grid 레이아웃에만 있음
+    /**
+     * ViewHolder that holds references to the views in each step item.
+     */
+    static class StepViewHolder extends RecyclerView.ViewHolder {
+        TextView stepContentText;
+        TextView stepNumberText;  // Only exists in the grid layout
         View clickOverlay;
 
-        ViewHolder(View itemView, int viewType) {
+        StepViewHolder(View itemView, int viewType) {
             super(itemView);
-            tvStepContent = itemView.findViewById(R.id.tvStepContent);
+            stepContentText = itemView.findViewById(R.id.tvStepContent);
             clickOverlay = itemView.findViewById(R.id.clickOverlay);
+
             if (viewType == VIEW_TYPE_GRID) {
-                tvStepNumber = itemView.findViewById(R.id.tvStepNumber);
+                stepNumberText = itemView.findViewById(R.id.tvStepNumber);
             }
         }
     }

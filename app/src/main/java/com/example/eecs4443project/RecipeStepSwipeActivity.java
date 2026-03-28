@@ -9,16 +9,19 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.SeekBar;
 import android.widget.TextView;
+
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.PagerSnapHelper;
 import androidx.recyclerview.widget.RecyclerView;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -54,10 +57,10 @@ public class RecipeStepSwipeActivity extends AppCompatActivity {
         seekBar = findViewById(R.id.seekBar);
 
         linearLayoutManager = new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false);
-        
+
         int spanCount = calculateSpanCount();
         gridLayoutManager = new GridLayoutManager(this, spanCount);
-        
+
         snapHelper = new PagerSnapHelper();
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
@@ -65,9 +68,6 @@ public class RecipeStepSwipeActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
-
-        String recipeText = getIntent().getStringExtra("recipe_text");
-        processRecipeData(recipeText);
 
         recyclerView.setLayoutManager(linearLayoutManager);
         snapHelper.attachToRecyclerView(recyclerView);
@@ -80,7 +80,20 @@ public class RecipeStepSwipeActivity extends AppCompatActivity {
         });
         recyclerView.setAdapter(adapter);
 
-        seekBar.setMax(steps.size() > 0 ? steps.size() - 1 : 0);
+        // Observe steps from ViewModel
+        RecipeStepViewModel viewModel = new ViewModelProvider(this).get(RecipeStepViewModel.class);
+        viewModel.getSteps().observe(this, newSteps -> {
+            steps.clear();
+            steps.addAll(newSteps);
+            adapter.notifyDataSetChanged();
+            seekBar.setMax(steps.size() > 0 ? steps.size() - 1 : 0);
+            updateUI(0);
+        });
+
+        String recipeText = getIntent().getStringExtra("recipe_text");
+        if (recipeText != null) {
+            viewModel.parseRecipeText(recipeText);
+        }
 
         recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
@@ -121,7 +134,6 @@ public class RecipeStepSwipeActivity extends AppCompatActivity {
             if (current < steps.size() - 1) {
                 recyclerView.smoothScrollToPosition(current + 1);
             } else {
-                // Return to previous activity when Finish is clicked
                 finish();
             }
         });
@@ -132,7 +144,7 @@ public class RecipeStepSwipeActivity extends AppCompatActivity {
     private int calculateSpanCount() {
         DisplayMetrics displayMetrics = getResources().getDisplayMetrics();
         float dpWidth = displayMetrics.widthPixels / displayMetrics.density;
-        int count = (int) (dpWidth / 150); 
+        int count = (int) (dpWidth / 150);
         return Math.max(3, count);
     }
 
@@ -151,7 +163,7 @@ public class RecipeStepSwipeActivity extends AppCompatActivity {
 
         adapter.setGridMode(false);
         adapter.notifyDataSetChanged();
-        
+
         recyclerView.post(() -> {
             recyclerView.scrollToPosition(position);
             updateUI(position);
@@ -162,26 +174,16 @@ public class RecipeStepSwipeActivity extends AppCompatActivity {
         if (isGridView) return;
         isGridView = true;
         Log.d("RecipeInteraction", "Switching to Grid");
-        
+
         try {
             snapHelper.attachToRecyclerView(null);
         } catch (Exception e) {
             Log.e("RecipeInteraction", "Error detaching SnapHelper", e);
         }
-        
+
         recyclerView.setLayoutManager(gridLayoutManager);
         adapter.setGridMode(true);
         adapter.notifyDataSetChanged();
-    }
-
-    private void processRecipeData(String rawText) {
-        if (rawText == null) return;
-        List<String> instructionSteps = parseSteps(rawText);
-        steps.clear();
-        steps.addAll(instructionSteps);
-        if (steps.isEmpty()) {
-            steps.add(rawText);
-        }
     }
 
     private void updateUI(int position) {
@@ -189,8 +191,7 @@ public class RecipeStepSwipeActivity extends AppCompatActivity {
         stepIndicator.setText("Step " + (position + 1));
         seekBar.setProgress(position);
         prevButton.setEnabled(position > 0);
-        
-        // Always enabled to allow "Finish" click on the last step
+
         nextButton.setEnabled(true);
 
         if (position == steps.size() - 1) {
@@ -198,31 +199,5 @@ public class RecipeStepSwipeActivity extends AppCompatActivity {
         } else {
             nextButton.setText("Next");
         }
-    }
-
-    private List<String> parseSteps(String text) {
-        List<String> list = new ArrayList<>();
-        String[] lines = text.split("\n");
-        boolean inInstructions = false;
-        StringBuilder currentStep = new StringBuilder();
-        for (String line : lines) {
-            String cleanLine = line.trim().replaceAll("[\\*#]", "");
-            String lower = cleanLine.toLowerCase();
-            if (lower.contains("instructions:") || lower.contains("steps:") || lower.contains("directions:")) {
-                inInstructions = true;
-                continue;
-            }
-            if (inInstructions && !cleanLine.isEmpty()) {
-                if (cleanLine.matches("^\\d+[\\.\\)].*")) {
-                    if (currentStep.length() > 0) list.add(currentStep.toString().trim());
-                    currentStep = new StringBuilder(cleanLine.replaceAll("^\\d+[\\.\\)]\\s*", ""));
-                } else {
-                    if (currentStep.length() > 0) currentStep.append(" ");
-                    currentStep.append(cleanLine);
-                }
-            }
-        }
-        if (currentStep.length() > 0) list.add(currentStep.toString().trim());
-        return list;
     }
 }

@@ -2,7 +2,6 @@ package com.example.eecs4443project;
 
 import android.app.AlertDialog;
 import android.content.Intent;
-import android.database.Cursor;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
@@ -22,6 +21,7 @@ import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -31,8 +31,8 @@ import java.util.List;
 
 public class SavedRecipesActivity extends AppCompatActivity {
 
-    private RecipeDatabaseHelper dbHelper;
-    private List<SavedRecipe> savedRecipesList = new ArrayList<>();
+    private SavedRecipesViewModel viewModel;
+    private final List<SavedRecipe> adapterList = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,15 +52,23 @@ public class SavedRecipesActivity extends AppCompatActivity {
             title.getLayoutParams().width = ViewGroup.LayoutParams.MATCH_PARENT;
         }
 
-        dbHelper = new RecipeDatabaseHelper(this);
-        loadSavedRecipes();
+        viewModel = new ViewModelProvider(this).get(SavedRecipesViewModel.class);
 
         RecyclerView recyclerView = findViewById(R.id.recipeRecyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        SavedRecipesAdapter adapter = new SavedRecipesAdapter(savedRecipesList);
+        SavedRecipesAdapter adapter = new SavedRecipesAdapter(adapterList);
         recyclerView.setAdapter(adapter);
 
-        // Swipe left to delete with red background and confirmation
+        // Observe saved recipes from ViewModel
+        viewModel.getSavedRecipesList().observe(this, recipes -> {
+            adapterList.clear();
+            adapterList.addAll(recipes);
+            adapter.notifyDataSetChanged();
+        });
+
+        viewModel.loadSavedRecipes();
+
+        // Swipe left to delete with red background, trash icon, and confirmation
         new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT) {
             private final ColorDrawable background = new ColorDrawable(Color.RED);
             private final Drawable deleteIcon = ContextCompat.getDrawable(SavedRecipesActivity.this, android.R.drawable.ic_menu_delete);
@@ -99,14 +107,14 @@ public class SavedRecipesActivity extends AppCompatActivity {
             @Override
             public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
                 int position = viewHolder.getAdapterPosition();
-                SavedRecipe recipe = savedRecipesList.get(position);
+                SavedRecipe recipe = adapterList.get(position);
 
                 new AlertDialog.Builder(SavedRecipesActivity.this)
                         .setTitle("Delete Recipe")
-                        .setMessage("Are you sure you want to delete \"" + recipe.title + "\"?")
+                        .setMessage("Are you sure you want to delete \"" + recipe.getTitle() + "\"?")
                         .setPositiveButton("Delete", (dialog, which) -> {
-                            dbHelper.deleteRecipeByTitle(recipe.title);
-                            savedRecipesList.remove(position);
+                            viewModel.deleteRecipeFromDatabase(recipe.getTitle());
+                            adapterList.remove(position);
                             adapter.notifyItemRemoved(position);
                         })
                         .setNegativeButton("Cancel", (dialog, which) -> {
@@ -120,38 +128,8 @@ public class SavedRecipesActivity extends AppCompatActivity {
         }).attachToRecyclerView(recyclerView);
     }
 
-    private void loadSavedRecipes() {
-        Cursor cursor = dbHelper.getAllSavedRecipes();
-        if (cursor != null && cursor.moveToFirst()) {
-            do {
-                int titleIndex = cursor.getColumnIndex(RecipeDatabaseHelper.COLUMN_TITLE);
-                int ingredientsIndex = cursor.getColumnIndex(RecipeDatabaseHelper.COLUMN_INGREDIENTS);
-                int instructionsIndex = cursor.getColumnIndex(RecipeDatabaseHelper.COLUMN_INSTRUCTIONS);
-
-                String title = cursor.getString(titleIndex);
-                String ingredients = cursor.getString(ingredientsIndex);
-                String instructions = cursor.getString(instructionsIndex);
-
-                savedRecipesList.add(new SavedRecipe(title, ingredients, instructions));
-            } while (cursor.moveToNext());
-            cursor.close();
-        }
-    }
-
-    static class SavedRecipe {
-        String title;
-        String ingredients;
-        String instructions;
-
-        SavedRecipe(String title, String ingredients, String instructions) {
-            this.title = title;
-            this.ingredients = ingredients;
-            this.instructions = instructions;
-        }
-    }
-
     class SavedRecipesAdapter extends RecyclerView.Adapter<SavedRecipesAdapter.ViewHolder> {
-        private List<SavedRecipe> recipes;
+        private final List<SavedRecipe> recipes;
 
         SavedRecipesAdapter(List<SavedRecipe> recipes) {
             this.recipes = recipes;
@@ -167,16 +145,13 @@ public class SavedRecipesActivity extends AppCompatActivity {
         @Override
         public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
             SavedRecipe recipe = recipes.get(position);
-            holder.recipeName.setText(recipe.title);
-            holder.recipeImage.setImageResource(R.mipmap.ic_launcher);
-            
+            holder.recipeName.setText(recipe.getTitle());
+            holder.recipeImage.setImageResource(R.drawable.baseline_fastfood_24);
+
             holder.itemView.setOnClickListener(v -> {
-                // Construct the full recipe text as it was received from AI
-                String fullText = "Title: " + recipe.title + "\n\nIngredients:\n" + recipe.ingredients + "\n\nInstructions:\n" + recipe.instructions;
-                
                 Intent intent = new Intent(SavedRecipesActivity.this, RecipeDetailActivity.class);
                 intent.putExtra("acquisition_mode", "ai");
-                intent.putExtra("recipe_text", fullText);
+                intent.putExtra("recipe_text", recipe.toFullText());
                 intent.putExtra("from_saved", true);
                 startActivity(intent);
             });

@@ -10,8 +10,8 @@
         android:id="@+id/recipeImage"
         android:layout_width="64dp"
         android:layout_height="64dp"
-        android:scaleType="centerCrop"
-        android:src="@mipmap/ic_launcher"
+        android:scaleType="fitCenter"
+        android:src="@drawable/baseline_fastfood_24"
         android:contentDescription="@string/content_desc_recipe_image"
         android:layout_marginEnd="16dp" />
 

@@ -15,14 +15,13 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.lifecycle.ViewModelProvider;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class RecipeStepScrollActivity extends AppCompatActivity {
-    private static final String TAG = "RecipeStepScroll";
     private LinearLayout stepsContainer;
-    private float currentTextSize = 16f; // Default text size in SP
+    private float currentTextSize = 16f;
     private final float MIN_TEXT_SIZE = 10f;
     private final float MAX_TEXT_SIZE = 40f;
     private ScaleGestureDetector scaleGestureDetector;
@@ -36,7 +35,7 @@ public class RecipeStepScrollActivity extends AppCompatActivity {
         setContentView(R.layout.activity_recipe_step_scroll);
 
         handMode = getIntent().getIntExtra("handMode", 1);
-        
+
         View mainView = findViewById(R.id.main);
         if (mainView != null) {
             ViewCompat.setOnApplyWindowInsetsListener(mainView, (v, insets) -> {
@@ -52,22 +51,28 @@ public class RecipeStepScrollActivity extends AppCompatActivity {
         stepsContainer = findViewById(R.id.stepsContainer);
         stepsContainer.removeAllViews();
 
-        String recipeText = getIntent().getStringExtra("recipe_text");
+        RecipeStepViewModel viewModel = new ViewModelProvider(this).get(RecipeStepViewModel.class);
 
-        if (recipeText != null) {
-            String ingredients = parseIngredients(recipeText);
-            if (!ingredients.isEmpty()) {
+        // Observe ingredients
+        viewModel.getIngredients().observe(this, ingredients -> {
+            if (ingredients != null && !ingredients.isEmpty()) {
                 addIngredientsToView(ingredients, stepsContainer);
             }
+        });
 
-            List<String> steps = parseSteps(recipeText);
-            if (steps.isEmpty()) {
-                addStepToView("Follow the instructions provided in the recipe details.", 1, stepsContainer);
-            } else {
+        // Observe steps
+        viewModel.getSteps().observe(this, steps -> {
+            if (steps != null) {
                 for (int i = 0; i < steps.size(); i++) {
                     addStepToView(steps.get(i), i + 1, stepsContainer);
                 }
             }
+        });
+
+        // Parse recipe (ViewModel skips if already parsed after rotation)
+        String recipeText = getIntent().getStringExtra("recipe_text");
+        if (recipeText != null) {
+            viewModel.parseRecipeText(recipeText);
         }
 
         // Setup Pinch-to-Zoom for Two Hands Mode
@@ -84,10 +89,10 @@ public class RecipeStepScrollActivity extends AppCompatActivity {
 
             findViewById(R.id.scrollView2).setOnTouchListener((v, event) -> {
                 scaleGestureDetector.onTouchEvent(event);
-                return false; // Allow scrolling
+                return false;
             });
         }
-        
+
         View topButton = findViewById(R.id.topButton);
         if (topButton != null) {
             topButton.setOnClickListener(v -> {
@@ -107,93 +112,6 @@ public class RecipeStepScrollActivity extends AppCompatActivity {
                 textView.setTextSize(TypedValue.COMPLEX_UNIT_SP, currentTextSize);
             }
         }
-    }
-
-    private String parseIngredients(String text) {
-        String[] lines = text.split("\n");
-        StringBuilder ingredientsBuilder = new StringBuilder();
-        boolean inIngredients = false;
-
-        for (String line : lines) {
-            String cleanLine = line.trim().replaceAll("[\\*#]", "");
-            String lowerLine = cleanLine.toLowerCase();
-
-            if (lowerLine.contains("ingredients")) {
-                inIngredients = true;
-                int colonIdx = cleanLine.indexOf(":");
-                if (colonIdx != -1 && colonIdx < cleanLine.length() - 1) {
-                    String restOfLine = cleanLine.substring(colonIdx + 1).trim();
-                    if (!restOfLine.isEmpty()) {
-                        ingredientsBuilder.append("• ").append(restOfLine).append("\n");
-                    }
-                }
-                continue;
-            }
-
-            if (lowerLine.contains("instructions") || lowerLine.contains("steps") || lowerLine.contains("directions")) {
-                inIngredients = false;
-                continue;
-            }
-
-            if (inIngredients && !cleanLine.isEmpty()) {
-                if (!cleanLine.startsWith("•") && !cleanLine.startsWith("-")) {
-                    ingredientsBuilder.append("• ").append(cleanLine).append("\n");
-                } else {
-                    ingredientsBuilder.append(cleanLine).append("\n");
-                }
-            }
-        }
-        return ingredientsBuilder.toString().trim();
-    }
-
-    private List<String> parseSteps(String text) {
-        List<String> steps = new ArrayList<>();
-        String[] lines = text.split("\n");
-        boolean inInstructions = false;
-        StringBuilder currentStep = new StringBuilder();
-
-        for (String line : lines) {
-            String cleanLine = line.trim().replaceAll("[\\*#]", "");
-            String lowerLine = cleanLine.toLowerCase();
-
-            if (lowerLine.contains("instructions") || lowerLine.contains("steps") || lowerLine.contains("directions")) {
-                inInstructions = true;
-                int colonIdx = cleanLine.indexOf(":");
-                if (colonIdx != -1 && colonIdx < cleanLine.length() - 1) {
-                    String restOfLine = cleanLine.substring(colonIdx + 1).trim();
-                    if (!restOfLine.isEmpty()) currentStep.append(restOfLine);
-                }
-                continue;
-            }
-
-            if (inInstructions && (lowerLine.contains("ingredients") || lowerLine.contains("notes") || lowerLine.contains("prep time"))) {
-                if (currentStep.length() > 0) {
-                    steps.add(currentStep.toString().trim());
-                    currentStep.setLength(0);
-                }
-                inInstructions = false;
-                continue;
-            }
-
-            if (inInstructions && !cleanLine.isEmpty()) {
-                if (cleanLine.matches("^\\d+[\\.\\)].*")) {
-                    if (currentStep.length() > 0) {
-                        steps.add(currentStep.toString().trim());
-                        currentStep.setLength(0);
-                    }
-                    currentStep.append(cleanLine.replaceAll("^\\d+[\\.\\)]\\s*", ""));
-                } else {
-                    if (currentStep.length() > 0) currentStep.append(" ");
-                    currentStep.append(cleanLine);
-                }
-            }
-        }
-
-        if (currentStep.length() > 0) {
-            steps.add(currentStep.toString().trim());
-        }
-
-        return steps;
     }
 
     private void addIngredientsToView(String ingredients, LinearLayout container) {
