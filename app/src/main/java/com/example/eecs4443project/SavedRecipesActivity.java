@@ -1,8 +1,14 @@
 package com.example.eecs4443project;
 
+import android.app.AlertDialog;
 import android.content.Intent;
 import android.database.Cursor;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,9 +18,11 @@ import android.widget.TextView;
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -38,14 +46,78 @@ public class SavedRecipesActivity extends AppCompatActivity {
         });
 
         TextView title = findViewById(R.id.resultsTitle);
-        if (title != null) title.setText("Saved Recipes");
+        if (title != null) {
+            title.setText("Saved Recipes");
+            title.setGravity(Gravity.CENTER);
+            title.getLayoutParams().width = ViewGroup.LayoutParams.MATCH_PARENT;
+        }
 
         dbHelper = new RecipeDatabaseHelper(this);
         loadSavedRecipes();
 
         RecyclerView recyclerView = findViewById(R.id.recipeRecyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        recyclerView.setAdapter(new SavedRecipesAdapter(savedRecipesList));
+        SavedRecipesAdapter adapter = new SavedRecipesAdapter(savedRecipesList);
+        recyclerView.setAdapter(adapter);
+
+        // Swipe left to delete with red background and confirmation
+        new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT) {
+            private final ColorDrawable background = new ColorDrawable(Color.RED);
+            private final Drawable deleteIcon = ContextCompat.getDrawable(SavedRecipesActivity.this, android.R.drawable.ic_menu_delete);
+
+            @Override
+            public boolean onMove(@NonNull RecyclerView rv, @NonNull RecyclerView.ViewHolder vh, @NonNull RecyclerView.ViewHolder target) {
+                return false;
+            }
+
+            @Override
+            public void onChildDraw(@NonNull Canvas c, @NonNull RecyclerView rv,
+                                    @NonNull RecyclerView.ViewHolder viewHolder, float dX, float dY,
+                                    int actionState, boolean isCurrentlyActive) {
+                View itemView = viewHolder.itemView;
+                if (dX < 0) {
+                    // Draw red background
+                    background.setBounds(itemView.getRight() + (int) dX, itemView.getTop(),
+                            itemView.getRight(), itemView.getBottom());
+                    background.draw(c);
+
+                    // Draw trash icon centered vertically, with margin from the right edge
+                    if (deleteIcon != null) {
+                        int iconMargin = (itemView.getHeight() - deleteIcon.getIntrinsicHeight()) / 2;
+                        int iconTop = itemView.getTop() + iconMargin;
+                        int iconBottom = iconTop + deleteIcon.getIntrinsicHeight();
+                        int iconLeft = itemView.getRight() - iconMargin - deleteIcon.getIntrinsicWidth();
+                        int iconRight = itemView.getRight() - iconMargin;
+                        deleteIcon.setBounds(iconLeft, iconTop, iconRight, iconBottom);
+                        deleteIcon.setTint(Color.WHITE);
+                        deleteIcon.draw(c);
+                    }
+                }
+                super.onChildDraw(c, rv, viewHolder, dX, dY, actionState, isCurrentlyActive);
+            }
+
+            @Override
+            public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
+                int position = viewHolder.getAdapterPosition();
+                SavedRecipe recipe = savedRecipesList.get(position);
+
+                new AlertDialog.Builder(SavedRecipesActivity.this)
+                        .setTitle("Delete Recipe")
+                        .setMessage("Are you sure you want to delete \"" + recipe.title + "\"?")
+                        .setPositiveButton("Delete", (dialog, which) -> {
+                            dbHelper.deleteRecipeByTitle(recipe.title);
+                            savedRecipesList.remove(position);
+                            adapter.notifyItemRemoved(position);
+                        })
+                        .setNegativeButton("Cancel", (dialog, which) -> {
+                            adapter.notifyItemChanged(position);
+                        })
+                        .setOnCancelListener(dialog -> {
+                            adapter.notifyItemChanged(position);
+                        })
+                        .show();
+            }
+        }).attachToRecyclerView(recyclerView);
     }
 
     private void loadSavedRecipes() {
@@ -103,8 +175,9 @@ public class SavedRecipesActivity extends AppCompatActivity {
                 String fullText = "Title: " + recipe.title + "\n\nIngredients:\n" + recipe.ingredients + "\n\nInstructions:\n" + recipe.instructions;
                 
                 Intent intent = new Intent(SavedRecipesActivity.this, RecipeDetailActivity.class);
-                intent.putExtra("acquisition_mode", "ai"); // Reuse the AI parsing logic
+                intent.putExtra("acquisition_mode", "ai");
                 intent.putExtra("recipe_text", fullText);
+                intent.putExtra("from_saved", true);
                 startActivity(intent);
             });
         }

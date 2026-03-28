@@ -104,7 +104,7 @@
             style="@style/Widget.MaterialComponents.Button.OutlinedButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Save Recipe"
+            android:text="@string/save_recipe_button"
             android:layout_marginBottom="8dp" />
 
         <Button

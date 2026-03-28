@@ -148,4 +148,20 @@ public class RecipeDatabaseHelper extends SQLiteOpenHelper {
         SQLiteDatabase db = this.getReadableDatabase();
         return db.query(TABLE_NAME, null, null, null, null, null, COLUMN_ID + " DESC");
     }
+
+    public boolean isRecipeSaved(String title) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.query(TABLE_NAME, new String[]{COLUMN_ID},
+                COLUMN_TITLE + "=?", new String[]{title},
+                null, null, null);
+        boolean exists = cursor != null && cursor.getCount() > 0;
+        if (cursor != null) cursor.close();
+        return exists;
+    }
+
+    public void deleteRecipeByTitle(String title) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        db.delete(TABLE_NAME, COLUMN_TITLE + "=?", new String[]{title});
+        db.close();
+    }
 }

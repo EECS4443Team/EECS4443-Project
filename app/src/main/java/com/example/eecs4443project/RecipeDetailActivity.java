@@ -1,8 +1,10 @@
 package com.example.eecs4443project;
 
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -18,6 +20,8 @@ import com.google.android.material.button.MaterialButtonToggleGroup;
 public class RecipeDetailActivity extends AppCompatActivity {
     private static final String TAG = "RecipeDetailActivity";
     private RecipeDatabaseHelper dbHelper;
+    private boolean isSaved = false;
+    private String parsedTitle = "AI Generated Recipe";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,6 +53,17 @@ public class RecipeDetailActivity extends AppCompatActivity {
 
             parseAndDisplayRecipe(recipeText, recipeTitle, recipeIngredients);
         }
+
+        // Hide save button when viewing a saved recipe
+        boolean fromSaved = getIntent().getBooleanExtra("from_saved", false);
+        if (fromSaved) {
+            saveRecipeButton.setVisibility(View.GONE);
+        } else if (dbHelper.isRecipeSaved(parsedTitle)) {
+            isSaved = true;
+            saveRecipeButton.setText(R.string.saved_recipe_button);
+            styleSaveButton(saveRecipeButton, true);
+        }
+
         navToggle.check(R.id.toggleScroll);
 
         startCookingButton.setOnClickListener(v -> {
@@ -75,12 +90,33 @@ public class RecipeDetailActivity extends AppCompatActivity {
 
 
         saveRecipeButton.setOnClickListener(v -> {
-            if (recipeText != null) {
-                saveRecipeToDatabase(recipeText);
-            } else {
+            if (recipeText == null) {
                 Toast.makeText(this, "No recipe data to save", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            if (isSaved) {
+                dbHelper.deleteRecipeByTitle(parsedTitle);
+                isSaved = false;
+                saveRecipeButton.setText(R.string.save_recipe_button);
+                styleSaveButton(saveRecipeButton, false);
+                Toast.makeText(this, "Recipe unsaved", Toast.LENGTH_SHORT).show();
+            } else {
+                saveRecipeToDatabase(recipeText);
+                isSaved = true;
+                saveRecipeButton.setText(R.string.saved_recipe_button);
+                styleSaveButton(saveRecipeButton, true);
             }
         });
+    }
+
+    private void styleSaveButton(Button button, boolean saved) {
+        if (saved) {
+            button.setBackgroundColor(Color.parseColor("#4A148C"));
+            button.setTextColor(Color.WHITE);
+        } else {
+            button.setBackgroundColor(Color.TRANSPARENT);
+            button.setTextColor(Color.parseColor("#4A148C"));
+        }
     }
 
     private void saveRecipeToDatabase(String text) {
@@ -173,6 +209,7 @@ public class RecipeDetailActivity extends AppCompatActivity {
             }
         }
 
+        parsedTitle = title;
         titleView.setText(title);
         if (ingredients.length() > 0) {
             ingredientsView.setText(ingredients.toString().trim());
