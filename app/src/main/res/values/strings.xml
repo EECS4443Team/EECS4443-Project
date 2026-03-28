@@ -48,6 +48,7 @@
     <string name="toggle_one_hand_mode">One-Hand</string>
     <string name="toggle_two_hand_mode">Two-Hand</string>
     <string name="save_recipe_button">Save Recipe</string>
+    <string name="saved_recipe_button">Saved</string>
 
     <string-array name="recipe_categories">
         <item>All</item>
