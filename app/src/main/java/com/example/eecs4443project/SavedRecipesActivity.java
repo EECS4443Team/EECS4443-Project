@@ -6,6 +6,7 @@ import android.database.Cursor;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -17,6 +18,7 @@ import android.widget.TextView;
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -61,6 +63,7 @@ public class SavedRecipesActivity extends AppCompatActivity {
         // Swipe left to delete with red background and confirmation
         new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT) {
             private final ColorDrawable background = new ColorDrawable(Color.RED);
+            private final Drawable deleteIcon = ContextCompat.getDrawable(SavedRecipesActivity.this, android.R.drawable.ic_menu_delete);
 
             @Override
             public boolean onMove(@NonNull RecyclerView rv, @NonNull RecyclerView.ViewHolder vh, @NonNull RecyclerView.ViewHolder target) {
@@ -73,9 +76,22 @@ public class SavedRecipesActivity extends AppCompatActivity {
                                     int actionState, boolean isCurrentlyActive) {
                 View itemView = viewHolder.itemView;
                 if (dX < 0) {
+                    // Draw red background
                     background.setBounds(itemView.getRight() + (int) dX, itemView.getTop(),
                             itemView.getRight(), itemView.getBottom());
                     background.draw(c);
+
+                    // Draw trash icon centered vertically, with margin from the right edge
+                    if (deleteIcon != null) {
+                        int iconMargin = (itemView.getHeight() - deleteIcon.getIntrinsicHeight()) / 2;
+                        int iconTop = itemView.getTop() + iconMargin;
+                        int iconBottom = iconTop + deleteIcon.getIntrinsicHeight();
+                        int iconLeft = itemView.getRight() - iconMargin - deleteIcon.getIntrinsicWidth();
+                        int iconRight = itemView.getRight() - iconMargin;
+                        deleteIcon.setBounds(iconLeft, iconTop, iconRight, iconBottom);
+                        deleteIcon.setTint(Color.WHITE);
+                        deleteIcon.draw(c);
+                    }
                 }
                 super.onChildDraw(c, rv, viewHolder, dX, dY, actionState, isCurrentlyActive);
             }
