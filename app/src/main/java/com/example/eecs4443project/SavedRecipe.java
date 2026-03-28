@@ -23,10 +23,6 @@ public class SavedRecipe {
         return ingredients;
     }
 
-    public String getInstructions() {
-        return instructions;
-    }
-
     /**
      * Converts the saved recipe back into the full text format
      * that RecipeParser can understand (Title/Ingredients/Instructions sections).

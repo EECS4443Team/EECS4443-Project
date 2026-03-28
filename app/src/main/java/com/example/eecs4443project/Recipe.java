@@ -11,7 +11,6 @@ import java.util.List;
 public class Recipe implements Serializable {
     private final long id;
     private final String title;
-    private final String imageUrl;
     private final List<String> ingredients;
     private final List<String> instructions;
 
@@ -21,7 +20,6 @@ public class Recipe implements Serializable {
     public Recipe(long id, String title, List<String> ingredients, List<String> instructions) {
         this.id = id;
         this.title = title;
-        this.imageUrl = null;
         this.ingredients = (ingredients != null) ? ingredients : new ArrayList<>();
         this.instructions = (instructions != null) ? instructions : new ArrayList<>();
     }
@@ -32,7 +30,6 @@ public class Recipe implements Serializable {
     public Recipe(String title, String imageUrl, List<String> ingredients, List<String> instructions) {
         this.id = 0;
         this.title = title;
-        this.imageUrl = imageUrl;
         this.ingredients = (ingredients != null) ? ingredients : new ArrayList<>();
         this.instructions = (instructions != null) ? instructions : new ArrayList<>();
     }
@@ -51,10 +48,6 @@ public class Recipe implements Serializable {
         return ingredients;
     }
 
-    public List<String> getInstructions() {
-        return instructions;
-    }
-
     /**
      * Converts the recipe into a formatted text string.
      * This format matches the structure expected by RecipeParser.
@@ -69,20 +62,16 @@ public class Recipe implements Serializable {
 
         // Add ingredients
         text.append("Ingredients:\n");
-        if (ingredients != null) {
-            for (String ingredient : ingredients) {
-                text.append("- ").append(ingredient).append("\n");
-            }
+        for (String ingredient : ingredients) {
+            text.append("- ").append(ingredient).append("\n");
         }
         text.append("\n");
 
         // Add instructions
         text.append("Instructions:\n");
-        if (instructions != null) {
-            for (int i = 0; i < instructions.size(); i++) {
-                int stepNumber = i + 1;
-                text.append(stepNumber).append(". ").append(instructions.get(i)).append("\n");
-            }
+        for (int i = 0; i < instructions.size(); i++) {
+            int stepNumber = i + 1;
+            text.append(stepNumber).append(". ").append(instructions.get(i)).append("\n");
         }
 
         return text.toString();
