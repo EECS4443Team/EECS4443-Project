@@ -74,6 +74,8 @@ public class RecipeDetailActivity extends AppCompatActivity {
         }
 
         navToggle.check(R.id.toggleScroll);
+        MaterialButtonToggleGroup handToggle = findViewById(R.id.handToggle);
+        handToggle.check(R.id.toggleOneHande);
 
         startCookingButton.setOnClickListener(v -> {
             boolean isCard = navToggle.getCheckedButtonId() == R.id.toggleCard;
@@ -83,7 +85,6 @@ public class RecipeDetailActivity extends AppCompatActivity {
             } else {
                 intent = new Intent(this, RecipeStepScrollActivity.class);
             }
-            MaterialButtonToggleGroup handToggle = findViewById(R.id.handToggle);
             int selectedHandId = handToggle.getCheckedButtonId();
             if (selectedHandId == R.id.toggleOneHande) {
                 intent.putExtra("handMode", 1);
