@@ -15,6 +15,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.PagerSnapHelper;
@@ -29,14 +30,13 @@ public class RecipeStepSwipeActivity extends AppCompatActivity {
     private SeekBar seekBar;
     private TextView stepIndicator;
     private Button prevButton, nextButton;
-    private List<String> steps = new ArrayList<>();
 
     private LinearLayoutManager linearLayoutManager;
     private GridLayoutManager gridLayoutManager;
     private PagerSnapHelper snapHelper;
-    private boolean isGridView = false;
     private int handMode = 1;
     private ScaleGestureDetector scaleGestureDetector;
+    private RecipeViewModel viewModel;
 
     @SuppressLint({"ClickableViewAccessibility", "MissingInflatedId"})
     @Override
@@ -44,6 +44,8 @@ public class RecipeStepSwipeActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_recipe_step_swipe);
+
+        viewModel = new ViewModelProvider(this).get(RecipeViewModel.class);
 
         handMode = getIntent().getIntExtra("handMode", 1);
 
@@ -67,29 +69,49 @@ public class RecipeStepSwipeActivity extends AppCompatActivity {
         });
 
         String recipeText = getIntent().getStringExtra("recipe_text");
-        processRecipeData(recipeText);
+        viewModel.setRawRecipeText(recipeText);
 
-        recyclerView.setLayoutManager(linearLayoutManager);
-        snapHelper.attachToRecyclerView(recyclerView);
-
-        adapter = new RecipeAdapter(steps, position -> {
-            if (isGridView) {
+        // Corrected Lambda Syntax
+        adapter = new RecipeAdapter(new ArrayList<>(), position -> {
+            if (Boolean.TRUE.equals(viewModel.getIsGridView().getValue())) {
                 Log.d("RecipeInteraction", "Grid item clicked: " + position);
                 switchToSwipeAtPosition(position);
             }
         });
         recyclerView.setAdapter(adapter);
 
-        seekBar.setMax(steps.size() > 0 ? steps.size() - 1 : 0);
+        // Observe ViewModel Data
+        viewModel.getSteps().observe(this, steps -> {
+            if (steps != null) {
+                adapter.setSteps(steps);
+                seekBar.setMax(!steps.isEmpty() ? steps.size() - 1 : 0);
+                updateUI(viewModel.getCurrentStepPosition().getValue(), steps);
+            }
+        });
+
+        viewModel.getIsGridView().observe(this, isGrid -> {
+            if (Boolean.TRUE.equals(isGrid)) {
+                applyGridLayout();
+            } else {
+                applySwipeLayout();
+            }
+        });
+
+        viewModel.getCurrentStepPosition().observe(this, pos -> {
+            updateUI(pos, viewModel.getSteps().getValue());
+            if (!Boolean.TRUE.equals(viewModel.getIsGridView().getValue()) && pos != null) {
+                recyclerView.smoothScrollToPosition(pos);
+            }
+        });
 
         recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
             public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
-                if (!isGridView) {
+                if (!Boolean.TRUE.equals(viewModel.getIsGridView().getValue())) {
                     View centerView = snapHelper.findSnapView(linearLayoutManager);
                     if (centerView != null) {
                         int pos = linearLayoutManager.getPosition(centerView);
-                        updateUI(pos);
+                        viewModel.setCurrentStepPosition(pos);
                     }
                 }
             }
@@ -98,8 +120,8 @@ public class RecipeStepSwipeActivity extends AppCompatActivity {
         scaleGestureDetector = new ScaleGestureDetector(this, new ScaleGestureDetector.SimpleOnScaleGestureListener() {
             @Override
             public boolean onScale(@NonNull ScaleGestureDetector detector) {
-                if (handMode == 2 && !isGridView && detector.getScaleFactor() < 0.8f) {
-                    switchToGrid();
+                if (handMode == 2 && !Boolean.TRUE.equals(viewModel.getIsGridView().getValue()) && detector.getScaleFactor() < 0.8f) {
+                    viewModel.setGridView(true);
                     return true;
                 }
                 return false;
@@ -111,22 +133,17 @@ public class RecipeStepSwipeActivity extends AppCompatActivity {
             return false;
         });
 
-        prevButton.setOnClickListener(v -> {
-            int current = linearLayoutManager.findFirstVisibleItemPosition();
-            if (current > 0) recyclerView.smoothScrollToPosition(current - 1);
-        });
+        prevButton.setOnClickListener(v -> viewModel.previousStep());
 
         nextButton.setOnClickListener(v -> {
-            int current = linearLayoutManager.findFirstVisibleItemPosition();
-            if (current < steps.size() - 1) {
-                recyclerView.smoothScrollToPosition(current + 1);
-            } else {
-                // Return to previous activity when Finish is clicked
+            List<String> steps = viewModel.getSteps().getValue();
+            Integer pos = viewModel.getCurrentStepPosition().getValue();
+            if (steps != null && pos != null && pos == steps.size() - 1) {
                 finish();
+            } else {
+                viewModel.nextStep();
             }
         });
-
-        updateUI(0);
     }
 
     private int calculateSpanCount() {
@@ -137,10 +154,12 @@ public class RecipeStepSwipeActivity extends AppCompatActivity {
     }
 
     private void switchToSwipeAtPosition(int position) {
-        if (!isGridView) return;
-        isGridView = false;
-        Log.d("RecipeInteraction", "Switching to Swipe at " + position);
+        viewModel.setGridView(false);
+        viewModel.setCurrentStepPosition(position);
+    }
 
+    private void applySwipeLayout() {
+        Log.d("RecipeInteraction", "Applying Swipe Layout");
         recyclerView.setLayoutManager(linearLayoutManager);
         try {
             snapHelper.attachToRecyclerView(null);
@@ -148,81 +167,32 @@ public class RecipeStepSwipeActivity extends AppCompatActivity {
         } catch (Exception e) {
             Log.e("RecipeInteraction", "Error attaching SnapHelper", e);
         }
-
         adapter.setGridMode(false);
         adapter.notifyDataSetChanged();
-        
-        recyclerView.post(() -> {
-            recyclerView.scrollToPosition(position);
-            updateUI(position);
-        });
     }
 
-    private void switchToGrid() {
-        if (isGridView) return;
-        isGridView = true;
-        Log.d("RecipeInteraction", "Switching to Grid");
-        
+    private void applyGridLayout() {
+        Log.d("RecipeInteraction", "Applying Grid Layout");
         try {
             snapHelper.attachToRecyclerView(null);
         } catch (Exception e) {
             Log.e("RecipeInteraction", "Error detaching SnapHelper", e);
         }
-        
         recyclerView.setLayoutManager(gridLayoutManager);
         adapter.setGridMode(true);
         adapter.notifyDataSetChanged();
     }
 
-    private void processRecipeData(String rawText) {
-        if (rawText == null) return;
-        List<String> instructionSteps = parseSteps(rawText);
-        steps.clear();
-        steps.addAll(instructionSteps);
-        if (steps.isEmpty()) {
-            steps.add(rawText);
-        }
-    }
-
-    private void updateUI(int position) {
-        if (position < 0 || position >= steps.size()) return;
+    private void updateUI(Integer position, List<String> steps) {
+        if (position == null || steps == null || position < 0 || position >= steps.size()) return;
         stepIndicator.setText("Step " + (position + 1));
         seekBar.setProgress(position);
         prevButton.setEnabled(position > 0);
         
-        // Always enabled to allow "Finish" click on the last step
-        nextButton.setEnabled(true);
-
         if (position == steps.size() - 1) {
             nextButton.setText("Finish");
         } else {
             nextButton.setText("Next");
         }
-    }
-
-    private List<String> parseSteps(String text) {
-        List<String> list = new ArrayList<>();
-        String[] lines = text.split("\n");
-        boolean inInstructions = false;
-        StringBuilder currentStep = new StringBuilder();
-        for (String line : lines) {
-            String cleanLine = line.trim().replaceAll("[\\*#]", "");
-            String lower = cleanLine.toLowerCase();
-            if (lower.contains("instructions:") || lower.contains("steps:") || lower.contains("directions:")) {
-                inInstructions = true;
-                continue;
-            }
-            if (inInstructions && !cleanLine.isEmpty()) {
-                if (cleanLine.matches("^\\d+[\\.\\)].*")) {
-                    if (currentStep.length() > 0) list.add(currentStep.toString().trim());
-                    currentStep = new StringBuilder(cleanLine.replaceAll("^\\d+[\\.\\)]\\s*", ""));
-                } else {
-                    if (currentStep.length() > 0) currentStep.append(" ");
-                    currentStep.append(cleanLine);
-                }
-            }
-        }
-        if (currentStep.length() > 0) list.add(currentStep.toString().trim());
-        return list;
     }
 }

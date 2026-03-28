@@ -26,6 +26,11 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.ViewHolder
         this.isGridMode = isGrid;
     }
 
+    public void setSteps(List<String> steps) {
+        this.steps = steps;
+        notifyDataSetChanged();
+    }
+
     public RecipeAdapter(List<String> steps, OnItemClickListener listener) {
         this.steps = steps;
         this.listener = listener;
@@ -63,7 +68,7 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.ViewHolder
     }
 
     @Override
-    public int getItemCount() { return steps.size(); }
+    public int getItemCount() { return steps != null ? steps.size() : 0; }
 
     static class ViewHolder extends RecyclerView.ViewHolder {
         TextView tvStepContent;

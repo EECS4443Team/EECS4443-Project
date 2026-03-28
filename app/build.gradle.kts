@@ -58,6 +58,11 @@ dependencies {
 
     implementation("com.google.ai.client.generativeai:generativeai:0.9.0")
     implementation("org.jsoup:jsoup:1.15.4")
-    // Update Guava to match
     implementation("com.google.guava:guava:33.0.0-android")
+
+    // Lifecycle components
+    val lifecycle_version = "2.8.7"
+    implementation("androidx.lifecycle:lifecycle-viewmodel:$lifecycle_version")
+    implementation("androidx.lifecycle:lifecycle-livedata:$lifecycle_version")
+    implementation("androidx.lifecycle:lifecycle-runtime:$lifecycle_version")
 }
