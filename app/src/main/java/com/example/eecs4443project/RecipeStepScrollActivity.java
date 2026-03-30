@@ -99,6 +99,9 @@ public class RecipeStepScrollActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Updates the font size of all recipe steps in the container.
+     */
     private void updateAllTextSizes() {
         for (int i = 0; i < stepsContainer.getChildCount(); i++) {
             View itemView = stepsContainer.getChildAt(i);
@@ -109,6 +112,9 @@ public class RecipeStepScrollActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Extracts the ingredients section from the raw recipe text.
+     */
     private String parseIngredients(String text) {
         String[] lines = text.split("\n");
         StringBuilder ingredientsBuilder = new StringBuilder();
@@ -146,6 +152,9 @@ public class RecipeStepScrollActivity extends AppCompatActivity {
         return ingredientsBuilder.toString().trim();
     }
 
+    /**
+     * Extracts individual cooking steps from the raw recipe text.
+     */
     private List<String> parseSteps(String text) {
         List<String> steps = new ArrayList<>();
         String[] lines = text.split("\n");
@@ -196,6 +205,9 @@ public class RecipeStepScrollActivity extends AppCompatActivity {
         return steps;
     }
 
+    /**
+     * Inflates and adds an ingredients view to the instructions container.
+     */
     private void addIngredientsToView(String ingredients, LinearLayout container) {
         View ingredientsView = LayoutInflater.from(this).inflate(R.layout.item_recipe_step, container, false);
         TextView titleView = ingredientsView.findViewById(R.id.stepNumber);
@@ -207,6 +219,9 @@ public class RecipeStepScrollActivity extends AppCompatActivity {
         container.addView(ingredientsView);
     }
 
+    /**
+     * Inflates and adds a single cooking step view to the instructions container.
+     */
     private void addStepToView(String text, int number, LinearLayout container) {
         View stepView = LayoutInflater.from(this).inflate(R.layout.item_recipe_step, container, false);
         TextView stepNumberView = stepView.findViewById(R.id.stepNumber);

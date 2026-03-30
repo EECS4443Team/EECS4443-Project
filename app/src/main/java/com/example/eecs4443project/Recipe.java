@@ -37,19 +37,28 @@ public class Recipe implements Serializable {
         return imageUrl;
     }
 
+    /**
+     *Create Recipe including id
+     */
     public Recipe(long id, String title, List<String> ingredients, List<String> instructions) {
         this.id = id;
         this.title = title;
         this.ingredients = ingredients != null ? ingredients : new ArrayList<>();
         this.instructions = instructions != null ? instructions : new ArrayList<>();
     }
-
+    /**
+     *Create Recipe (default)
+     */
     public Recipe(String title, String imageUrl, List<String> ingredients, List<String> instructions) {
         this.title = title;
         this.imageUrl = imageUrl;
         this.ingredients = ingredients != null ? ingredients : new ArrayList<>();
         this.instructions = instructions != null ? instructions : new ArrayList<>();
     }
+
+    /**
+     *Create Recipe by extracting from the text
+     */
     public Recipe(String text) {
         String[] lines = text.split("\n");
         String title = "AI Generated Recipe";
@@ -99,6 +108,7 @@ public class Recipe implements Serializable {
 
     /**
      * Converts the recipe object to a formatted string compatible with the AI recipe format.
+     * Trace Organ
      */
     public String toFormattedText() {
         StringBuilder sb = new StringBuilder();

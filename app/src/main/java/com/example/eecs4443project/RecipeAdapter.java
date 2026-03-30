@@ -67,7 +67,7 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.ViewHolder
 
     static class ViewHolder extends RecyclerView.ViewHolder {
         TextView tvStepContent;
-        TextView tvStepNumber; // Grid 레이아웃에만 있음
+        TextView tvStepNumber;
         View clickOverlay;
 
         ViewHolder(View itemView, int viewType) {

@@ -129,6 +129,9 @@ public class RecipeStepSwipeActivity extends AppCompatActivity {
         updateUI(0);
     }
 
+    /**
+     * Calculates the number of columns for the grid view based on screen width.
+     */
     private int calculateSpanCount() {
         DisplayMetrics displayMetrics = getResources().getDisplayMetrics();
         float dpWidth = displayMetrics.widthPixels / displayMetrics.density;
@@ -136,6 +139,9 @@ public class RecipeStepSwipeActivity extends AppCompatActivity {
         return Math.max(3, count);
     }
 
+    /**
+     * Switches the view from grid mode back to horizontal swipe mode at a specific step.
+     */
     private void switchToSwipeAtPosition(int position) {
         if (!isGridView) return;
         isGridView = false;
@@ -158,6 +164,9 @@ public class RecipeStepSwipeActivity extends AppCompatActivity {
         });
     }
 
+    /**
+     * Switches the view from swipe mode to a grid overview of all steps.
+     */
     private void switchToGrid() {
         if (isGridView) return;
         isGridView = true;
@@ -174,6 +183,9 @@ public class RecipeStepSwipeActivity extends AppCompatActivity {
         adapter.notifyDataSetChanged();
     }
 
+    /**
+     * Parses the recipe text and prepares the list of steps for the adapter.
+     */
     private void processRecipeData(String rawText) {
         if (rawText == null) return;
         List<String> instructionSteps = parseSteps(rawText);
@@ -184,6 +196,9 @@ public class RecipeStepSwipeActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Updates the step indicator, progress bar, and navigation buttons.
+     */
     private void updateUI(int position) {
         if (position < 0 || position >= steps.size()) return;
         stepIndicator.setText("Step " + (position + 1));
@@ -200,6 +215,9 @@ public class RecipeStepSwipeActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Parses raw text into a list of individual cooking instructions.
+     */
     private List<String> parseSteps(String text) {
         List<String> list = new ArrayList<>();
         String[] lines = text.split("\n");

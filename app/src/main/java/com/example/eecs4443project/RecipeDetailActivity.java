@@ -109,6 +109,9 @@ public class RecipeDetailActivity extends AppCompatActivity {
         });
     }
 
+    /**
+     * Updates the visual appearance of the save button based on whether the recipe is saved.
+     */
     private void styleSaveButton(Button button, boolean saved) {
         if (saved) {
             button.setBackgroundColor(Color.parseColor("#4A148C"));
@@ -119,6 +122,9 @@ public class RecipeDetailActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Parses the raw recipe text and saves the title, ingredients, and instructions to the database.
+     */
     private void saveRecipeToDatabase(String text) {
         String title = "AI Generated Recipe";
         StringBuilder ingredients = new StringBuilder();
@@ -171,6 +177,10 @@ public class RecipeDetailActivity extends AppCompatActivity {
             Toast.makeText(this, "Failed to save recipe", Toast.LENGTH_SHORT).show();
         }
     }
+
+    /**
+     * Parses the recipe text to extract the title and ingredients, then displays them on the UI.
+     */
     private void parseAndDisplayRecipe(String text, TextView titleView, TextView ingredientsView) {
         String[] lines = text.split("\n");
         String title  = "AI Generated Recipe";

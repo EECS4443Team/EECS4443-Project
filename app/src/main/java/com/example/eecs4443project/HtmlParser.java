@@ -101,7 +101,6 @@ public class HtmlParser {
                 if (secondImg.hasAttr("data-lazy-src")) {
                     this.imageUrl = secondImg.attr("data-lazy-src");
                 } else if (secondImg.hasAttr("src")) {
-                    // abs:src를 쓰면 상대 경로(예: /wp-content/...)를 절대 경로(예: https://...)로 바꿔줍니다.
                     this.imageUrl = secondImg.attr("abs:src");
                 }
 
