@@ -11,7 +11,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="AI Recipe Suggester"
+        android:text="@string/ai_recipe_suggester"
         android:textSize="24sp"
         android:textColor="#333333"
         android:fontFamily="sans-serif-medium"
@@ -31,7 +31,7 @@
         android:id="@+id/statusText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Searching for recipes..."
+        android:text="@string/ai_searching_for_recipes"
         android:layout_gravity="center"
         android:visibility="gone"
         android:layout_marginBottom="16dp"/>
@@ -47,10 +47,5 @@
             android:layout_height="wrap_content"
             android:orientation="vertical" />
     </ScrollView>
-
-    <!-- Hidden views for compatibility -->
-    <TextView android:id="@+id/aiOutput" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" />
-    <androidx.cardview.widget.CardView android:id="@+id/recipeCard" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" />
-    <Button android:id="@+id/viewRecipeButton" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" />
 
 </LinearLayout>
