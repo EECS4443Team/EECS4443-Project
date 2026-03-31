@@ -15,6 +15,8 @@
     <string name="title_ai_results">AI-Generated Results</string>
     <string name="ai_output_placeholder">AI-generated recipe will appear here…</string>
     <string name="button_view_recipe">View Recipe</string>
+    <string name="ai_recipe_suggester">AI Recipe Suggester</string>
+    <string name="ai_searching_for_recipes">Searching for recipes...</string>
 
     <!-- SearchResultsActivity -->
     <string name="title_search_results">Search Results</string>
